@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.json.JSONObject;
+
 import com.google.gson.Gson;
 import com.wechat.pojo.token.AccessToken;
 import com.wechat.pojo.token.GetAddressList;
@@ -66,13 +68,18 @@ public class InitUtil {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+		} else {
+//			if (!getAddress(data.isCorp(), accessToken.getAccess_token())) {
+//				getAccessToken(flag, data);
+//			}
 		}
-		Map<String, AccessToken> tokenMap = TokenAndTicket.get().getTokenMap();
-		if (tokenMap.containsKey(flag))
-			tokenMap.remove(flag);
-		tokenMap.put(flag, accessToken);
-		TokenAndTicket.get().setTokenMap(tokenMap);
-		return accessToken;
+//		Map<String, AccessToken> tokenMap = TokenAndTicket.get().getTokenMap();
+		if (TokenAndTicket.get().getTokenMap().containsKey(flag))
+			TokenAndTicket.get().getTokenMap().remove(flag);
+		TokenAndTicket.get().getTokenMap().put(flag, accessToken);
+//		TokenAndTicket.get().setTokenMap(tokenMap);
+		AccessToken token = TokenAndTicket.get().getTokenMap().get(flag);
+		return token;
 	}
 
 	/**
@@ -84,7 +91,8 @@ public class InitUtil {
 	public JSApiTicket getJSAPITicket(String flag, String url) {
 		JSApiTicket jsApiTicket = null;
 		try {
-			String token = TokenAndTicket.get().getTokenMap().get(flag).getAccess_token();
+			AccessToken accessToken = TokenAndTicket.get().getTokenMap().get(flag);
+			String token = accessToken.getAccess_token();
 			jsApiTicket = AdvancedUtil.getJSApiTicket(url, token);
 			Map<String, JSApiTicket> map = TokenAndTicket.get().getTicketMap();
 			if (map.containsKey(flag))
@@ -102,7 +110,7 @@ public class InitUtil {
 	 * @param isCorp		是否企业号
 	 * @param accessToken	accesstoken
 	 */
-	public void getAddress(boolean isCorp, String accessToken) {
+	public boolean getAddress(boolean isCorp, String accessToken) {
 		String url = null;
 		if (isCorp) {
 			url = GET_CORP_WECHAT_ADDRESS_LIST.replace("ACCESS_TOKEN", accessToken);
@@ -112,30 +120,41 @@ public class InitUtil {
 		String json = CommonUtil.httpsRequest(url, GET, null);
 
 		// System.out.println(json);
-
-		GetAddressList list = gson.fromJson(json, GetAddressList.class);
-		if (isCorp) {
-			if (WechatIP.get().getCorpIPList().equals(json))
-				return;
-			WechatIP.get().setCorpIPList(json);
-			WechatIP.get().setCorpList(list.getIp_list());
+		JSONObject object = new JSONObject(json);
+		if (object.has("errcode")) {
+//			String wstr = isCorp ? "企业号" : "公证号";
+//			try {
+//				throw new Exception(wstr + "问题;" + object.toString() + "。accessToken:" + accessToken);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+			return false;
 		} else {
-			if (WechatIP.get().getIpList().equals(json))
-				return;
-			WechatIP.get().setIpList(json);
-			WechatIP.get().setList(list.getIp_list());
+			GetAddressList list = gson.fromJson(json, GetAddressList.class);
+			if (isCorp) {
+				if (WechatIP.get().getCorpIPList().equals(json))
+					return true;
+				WechatIP.get().setCorpIPList(json);
+				WechatIP.get().setCorpList(list.getIp_list());
+			} else {
+				if (WechatIP.get().getIpList().equals(json))
+					return true;
+				WechatIP.get().setIpList(json);
+				WechatIP.get().setList(list.getIp_list());
+			}
+			CharSequence sequence = "/";
+			List<String> sublist = new ArrayList<String>();
+			for (String ip : WechatIP.get().getList()) {
+				if (ip.contains(sequence))
+					sublist.add(ip);
+			}
+			for (String ip : WechatIP.get().getCorpList()) {
+				if (ip.contains(sequence))
+					sublist.add(ip);
+			}
+			WechatIP.get().setSublist(sublist);
 		}
-		CharSequence sequence = "/";
-		List<String> sublist = new ArrayList<String>();
-		for (String ip : WechatIP.get().getList()) {
-			if (ip.contains(sequence))
-				sublist.add(ip);
-		}
-		for (String ip : WechatIP.get().getCorpList()) {
-			if (ip.contains(sequence))
-				sublist.add(ip);
-		}
-		WechatIP.get().setSublist(sublist);
+		return true;
 	}
 
 	/**
@@ -148,18 +167,19 @@ public class InitUtil {
 				while (true) {
 					try {
 						AccessToken accessToken = getAccessToken(flag, data);
-						System.out.println(flag + "的accesstoken是："
-								+ TokenAndTicket.get().getTokenMap().get(flag).getAccess_token());
 						String url = null;
 						if (data.isCorp()) {
 							url = CORP_JSAPI_TICKET;
 						} else {
 							url = JSAPI_TICKET_URL;
 						}
+						while (TokenAndTicket.get().getTokenMap().get(flag) == null || TokenAndTicket.get().getTokenMap().get(flag).getAccess_token() == null) {
+							TimeUnit.MILLISECONDS.sleep(200);
+						}
+				
 						getJSAPITicket(flag, url);
-						getAddress(data.isCorp(), TokenAndTicket.get().getTokenMap().get(flag).getAccess_token());
-						System.out.println(
-								flag + "的jsapiticket是：" + TokenAndTicket.get().getTicketMap().get(flag).getTicket());
+						System.out.println(flag + "的accesstoken是：" + TokenAndTicket.get().getTokenMap().get(flag).getAccess_token());
+						System.out.println(flag + "的jsapiticket是：" + TokenAndTicket.get().getTicketMap().get(flag).getTicket());
 						if (data.isCorp()) {
 							System.out.println("企业号：" + accessToken.getExpires_in() + "+1秒后刷新");
 							TimeUnit.SECONDS.sleep(accessToken.getExpires_in() + 1);
