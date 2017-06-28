@@ -47,6 +47,9 @@ public class AdvancedUtil {
 		if (!json.has("errcode")) {
 			Gson gson = new Gson();
 			wat = gson.fromJson(jsonStr, WebAccessToken.class);
+		} else if (json.getInt("errcode") == 0 || json.getString("errcode").equals("0")) {
+			Gson gson = new Gson();
+			wat = gson.fromJson(jsonStr, WebAccessToken.class);
 		} else {
 			String errmsg = "获取网页AccessToken失败\n错误代码(errcode)：" + json.getInt("errcode")
 					+ "， 错误消息(errmsg)：" + json.getString("errmsg") + "。";
@@ -116,6 +119,9 @@ public class AdvancedUtil {
 		if (!json.has("errcode")) {
 			Gson gson = new Gson();
 			webUserInfo = gson.fromJson(jsonStr, WebUserInfo.class);
+		} else if (json.getInt("errcode") == 0 || json.getString("errcode").equals("0")) {
+			Gson gson = new Gson();
+			webUserInfo = gson.fromJson(jsonStr, WebUserInfo.class);
 		} else {
 			String errmsg = "获取网页AccessToken失败\n错误代码(errcode)：" + json.getInt("errcode")
 					+ "， 错误消息(errmsg)：" + json.getString("errmsg") + "。";
@@ -137,6 +143,9 @@ public class AdvancedUtil {
 		String jsonStr = CommonUtil.httpsRequest(url, GET, null);
 		JSONObject json = new JSONObject(jsonStr);
 		if (!json.has("errcode")) {
+			Gson gson = new Gson();
+			cwi = gson.fromJson(jsonStr, CorpWebUserTicket.class);
+		} else if (json.getInt("errcode") == 0 || json.getString("errcode").equals("0")) {
 			Gson gson = new Gson();
 			cwi = gson.fromJson(jsonStr, CorpWebUserTicket.class);
 		} else {
@@ -162,6 +171,8 @@ public class AdvancedUtil {
 			String jsonStr = CommonUtil.httpsRequest(url, POST, postData);
 			JSONObject json = new JSONObject(jsonStr);
 			if (!json.has("errcode")) {
+				info = gson.fromJson(jsonStr, CorpWebUserInfo.class);
+			} else if (json.getInt("errcode") == 0 || json.getString("errcode").equals("0")) {
 				info = gson.fromJson(jsonStr, CorpWebUserInfo.class);
 			} else {
 				String errmsg = "企业号获取网页用户信息失败\n错误代码(errcode)：" + json.getInt("errcode")
