@@ -148,9 +148,11 @@ public class Test {
 //		System.out.println(back.getErrcode() + "\n" + back.getErrmsg());
 //		System.out.println(back);
 //		hello(back);
-		String url = "https://qyapi.weixin.qq.com/cgi-bin/media/get?access_token=4PmA6UbPU9opVxuU2E0WjHlizMZgKH-WCoQWGzVqiMQ9ZAM7trM5iDxCqPMT5Vml&media_id=3yKSd7Qn5v-Bm0PFIXbt5lFntAGc5Ux5kVdSSVoT7J4VbkIVIzAK3LflVsOrLc6M";
-		down(url, "C:\\Users\\admin\\Desktop\\123456\\weixin.jpg");
-
+//		String url = "https://qyapi.weixin.qq.com/cgi-bin/media/get?access_token=4PmA6UbPU9opVxuU2E0WjHlizMZgKH-WCoQWGzVqiMQ9ZAM7trM5iDxCqPMT5Vml&media_id=3yKSd7Qn5v-Bm0PFIXbt5lFntAGc5Ux5kVdSSVoT7J4VbkIVIzAK3LflVsOrLc6M";
+//		down(url, "C:\\Users\\admin\\Desktop\\123456\\weixin.jpg");
+		Integer integer = new Integer(123);
+		String iii = integer + "";
+		System.out.println(iii);
 	}
 
 	public static boolean down(String reqUrl, String filePath) {
