@@ -68,16 +68,10 @@ public class InitUtil {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		} else {
-//			if (!getAddress(data.isCorp(), accessToken.getAccess_token())) {
-//				getAccessToken(flag, data);
-//			}
-		}
-//		Map<String, AccessToken> tokenMap = TokenAndTicket.get().getTokenMap();
+		} 
 		if (TokenAndTicket.get().getTokenMap().containsKey(flag))
 			TokenAndTicket.get().getTokenMap().remove(flag);
 		TokenAndTicket.get().getTokenMap().put(flag, accessToken);
-//		TokenAndTicket.get().setTokenMap(tokenMap);
 		AccessToken token = TokenAndTicket.get().getTokenMap().get(flag);
 		return token;
 	}
