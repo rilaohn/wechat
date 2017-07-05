@@ -2,11 +2,15 @@ package com.wechat.utils;
 
 import static com.wechat.utils.C.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
 import com.wechat.pojo.token.JSApiTicket;
 import com.wechat.pojo.token.JSApiTicketSingleton;
+import com.wechat.pojo.token.QRCodeResult;
 import com.wechat.pojo.token.UserTicket;
 import com.wechat.pojo.token.WebAccessToken;
 import com.wechat.pojo.user.CorpWebUserInfo;
@@ -47,7 +51,7 @@ public class AdvancedUtil {
 		if (!json.has("errcode")) {
 			Gson gson = new Gson();
 			wat = gson.fromJson(jsonStr, WebAccessToken.class);
-		} else if (json.getInt("errcode") == 0 || (json.get("errcode") + "").equals("0")) {
+		} else if (json.getInt("errcode") == 0 ) {
 			Gson gson = new Gson();
 			wat = gson.fromJson(jsonStr, WebAccessToken.class);
 		} else {
@@ -119,7 +123,7 @@ public class AdvancedUtil {
 		if (!json.has("errcode")) {
 			Gson gson = new Gson();
 			webUserInfo = gson.fromJson(jsonStr, WebUserInfo.class);
-		} else if (json.getInt("errcode") == 0 || (json.get("errcode") + "").equals("0")) {
+		} else if (json.getInt("errcode") == 0 ) {
 			Gson gson = new Gson();
 			webUserInfo = gson.fromJson(jsonStr, WebUserInfo.class);
 		} else {
@@ -145,7 +149,7 @@ public class AdvancedUtil {
 		if (!json.has("errcode")) {
 			Gson gson = new Gson();
 			cwi = gson.fromJson(jsonStr, CorpWebUserTicket.class);
-		} else if (json.getInt("errcode") == 0 || (json.get("errcode") + "").equals("0")) {
+		} else if (json.getInt("errcode") == 0 ) {
 			Gson gson = new Gson();
 			cwi = gson.fromJson(jsonStr, CorpWebUserTicket.class);
 		} else {
@@ -160,6 +164,12 @@ public class AdvancedUtil {
 		return cwi;
 	}
 	
+	/**
+	 * 获取企业号网页用户信息
+	 * @param accessToken	企业号的唯一凭证
+	 * @param userTicket	企业号webticket
+	 * @return	CorpWebUserInfo 实体类
+	 */
 	public static CorpWebUserInfo getCorpWebUserInfo(String accessToken, String userTicket) {
 		Gson gson = new Gson();
 		String url = CORP_WEB_USER_INFO_BY_TICKET.replace("ACCESS_TOKEN", accessToken);
@@ -172,7 +182,7 @@ public class AdvancedUtil {
 			JSONObject json = new JSONObject(jsonStr);
 			if (!json.has("errcode")) {
 				info = gson.fromJson(jsonStr, CorpWebUserInfo.class);
-			} else if (json.getInt("errcode") == 0 || (json.get("errcode") + "").equals("0")) {
+			} else if (json.getInt("errcode") == 0 ) {
 				info = gson.fromJson(jsonStr, CorpWebUserInfo.class);
 			} else {
 				String errmsg = "企业号获取网页用户信息失败\n错误代码(errcode)：" + json.getInt("errcode")

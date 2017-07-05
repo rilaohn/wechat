@@ -742,6 +742,36 @@ public class C {
 	 */
 	public static final String CORP_SEND_MSG_URL = "https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=ACCESS_TOKEN";
 	
+	/**
+	 * 公众号生成带参数二维码
+	 * <br>需要：【POST】
+	 * <ol><li>ACCESS_TOKEN &emsp; 公众号的调用接口凭证</li>
+	 * </ol><br>
+	 */
+	public static final String QRCODE_WITH_PARAM = "https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=ACCESS_TOKEN";
+	
+	/**
+	 * 公众号生成带参数二维码
+	 * <br>需要：【POST】
+	 * <ol><li>TICKET &emsp; 生成的二维码ticket</li>
+	 * </ol><br>
+	 */
+	public static final String GET_QRCODE_PIC_BY_TICKET = "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=TICKET";
+	
+	/**
+	 * 微信短链接
+	 * <br>需要：【POST】
+	 * <ol><li>ACCESS_TOKEN &emsp; 公众号的调用接口凭证</li>
+	 * </ol><br>
+	 */
+	public static final String LONG_2_SHORT_URL = "https://api.weixin.qq.com/cgi-bin/shorturl?access_token=ACCESS_TOKEN";
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
