@@ -75,6 +75,8 @@ public class MyWeChat {
 	private WechatData wechatData;
 	private WebProcess webProcess;
 	private String flag;
+	private AccessToken accessToken;
+	private JSApiTicket jsApiTicket;
 
 	/**
 	 * 初始化
@@ -88,12 +90,14 @@ public class MyWeChat {
 		wechatData = new WechatData();
 		wechatData.setToken(token);
 		wechatData.setInitData(initData);
-		webProcess = new WebProcess(initData);
+		this.accessToken = getAccessToken(flag);
+		this.jsApiTicket = getJSApiTicket(flag);
+		webProcess = new WebProcess(initData, this.accessToken, this.jsApiTicket);
 		util = new CheckUtil();
 		process = new MsgProcess(wechatData);
-		send = new SendMessage(TokenAndTicket.get().getTokenMap().get(flag).getAccess_token());
-		corp = new CorpProcess(wechatData);
-		menuUtil = new MenuUtil(TokenAndTicket.get().getTokenMap().get(flag));
+		send = new SendMessage(this.accessToken.getAccess_token());
+		corp = new CorpProcess(wechatData, this.accessToken, this.jsApiTicket);
+		menuUtil = new MenuUtil(this.accessToken);
 	}
 
 	/**
@@ -1936,5 +1940,14 @@ public class MyWeChat {
 	 */
 	public ShortUrl getShortUrl(String longUrl) {
 		return webProcess.getShortUrl(longUrl);
+	}
+	
+	// FIXME 下面是私有方法
+	private AccessToken getAccessToken(String flag) {
+		return TokenAndTicket.get().getTokenMap().get(flag);
+	}
+	
+	private JSApiTicket getJSApiTicket(String flag) {
+		return TokenAndTicket.get().getTicketMap().get(flag);
 	}
 }

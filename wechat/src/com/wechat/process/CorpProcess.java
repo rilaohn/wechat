@@ -76,9 +76,10 @@ import com.wechat.pojo.msg.send.kf.News;
 import com.wechat.pojo.msg.send.kf.Text;
 import com.wechat.pojo.msg.send.kf.Video;
 import com.wechat.pojo.msg.send.mass.Media;
+import com.wechat.pojo.token.AccessToken;
 import com.wechat.pojo.token.InitData;
+import com.wechat.pojo.token.JSApiTicket;
 import com.wechat.pojo.token.Token;
-import com.wechat.pojo.token.TokenAndTicket;
 import com.wechat.pojo.token.WechatData;
 import com.wechat.utils.CommonUtil;
 import com.wechat.utils.DownFile;
@@ -97,13 +98,17 @@ public class CorpProcess {
 	private Gson gson;
 	private Token token;
 	private InitData initData;
+	private AccessToken accessToken;
+	private JSApiTicket jsApiTicket;
 
-	public CorpProcess(WechatData data) {
+	public CorpProcess(WechatData data, AccessToken accessToken, JSApiTicket jsApiTicket) {
 		token = data.getToken();
 		initData = data.getInitData();
 		if (data.getToken().isEncrypt()) 
 			aesUtil = new WechatAESUtil(this.token, initData.getId());
 		gson = new GsonBuilder().disableHtmlEscaping().create();
+		this.accessToken = accessToken;
+		this.jsApiTicket = jsApiTicket;
 	}
 
 	/**
@@ -572,7 +577,7 @@ public class CorpProcess {
 	public List<DepartmentUser> getDepartmentUserSimeple(String departmentId, int fetchChild, int status) {
 		String url = CORP_GET_DEPARTMENT_USER_SIMPLE.replace("STATUS", "" + status)
 				.replace("FETCH_CHILD", "" + fetchChild).replace("DEPARTMENT_ID", departmentId)
-				.replace("ACCESS_TOKEN", TokenAndTicket.get().getTokenMap().get(initData.getFlag()).getAccess_token());
+				.replace("ACCESS_TOKEN", getToken());
 		String json = request(url, GET, null);
 		GetDepartmentUser user = gson.fromJson(json, GetDepartmentUser.class);
 		if (user.getErrcode() != 0)
@@ -590,7 +595,7 @@ public class CorpProcess {
 	public List<UserInfo> getDepartmentUser(String departmentId, int fetchChild, int status) {
 		String url = CORP_GET_DEPARTMENT_USER.replace("STATUS", "" + status).replace("FETCH_CHILD", "" + fetchChild)
 				.replace("DEPARTMENT_ID", departmentId)
-				.replace("ACCESS_TOKEN", TokenAndTicket.get().getTokenMap().get(initData.getFlag()).getAccess_token());
+				.replace("ACCESS_TOKEN", getToken());
 		String json = request(url, GET, null);
 		GetDepartmentUserAll user = gson.fromJson(json, GetDepartmentUserAll.class);
 		if (user.getErrcode() != 0)
@@ -1102,7 +1107,7 @@ public class CorpProcess {
 	}
 
 	private String getToken() {
-		return TokenAndTicket.get().getTokenMap().get(initData.getFlag()).getAccess_token();
+		return this.accessToken.getAccess_token();
 	}
 
 	private String request(String url, String method, String post) {

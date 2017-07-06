@@ -23,12 +23,30 @@ public class DownFile {
 		    return null;
 		}
 	    try {
-	    	File dir = new File(filePath);
+	    	String dirPath = null;
+	    	String[] dirs = null;
+			String lastStr;
+	    	if (filePath.indexOf("\\") != -1) {
+				dirs = filePath.split("\\\\");
+			} else if (filePath.indexOf("/") != -1) {
+				dirs = filePath.split("/");
+			}
+			lastStr = dirs[dirs.length - 1];
+			dirPath = filePath.substring(0, filePath.length() - lastStr.length());
+			
+	    	File dir = new File(dirPath);
 	    	if (!dir.exists() && !dir.isDirectory()) 
 	    		dir.mkdirs();
 	        URLConnection conn = url.openConnection();
 	        Map<String, List<String>> map = conn.getHeaderFields();
-	        String fileFormat = conn.getHeaderFields().get("Content-disposition").get(0).split("\"")[1].split("\\.")[1];
+	        String fileFormat = null;
+	        if (map.containsKey("Content-disposition")) {
+	        	fileFormat = map.get("Content-disposition").get(0).split("\"")[1].split("\\.")[1];
+			} else if (map.containsKey("Content-Type")) {
+				fileFormat = map.get("Content-Type").get(0).split("/")[1];
+			} else {
+				fileFormat = "jpg";
+			}
 	        filePath = filePath + "." + fileFormat;
 	        InputStream inStream = conn.getInputStream();
 	        FileOutputStream fs = new FileOutputStream(filePath);

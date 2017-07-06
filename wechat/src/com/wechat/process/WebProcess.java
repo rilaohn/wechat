@@ -9,7 +9,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.wechat.pojo.token.AccessToken;
 import com.wechat.pojo.token.InitData;
+import com.wechat.pojo.token.JSApiTicket;
 import com.wechat.pojo.token.QRCodeResult;
 import com.wechat.pojo.token.ShortUrl;
 import com.wechat.pojo.token.TokenAndTicket;
@@ -34,9 +37,15 @@ import com.wechat.utils.JSSign;
 public class WebProcess {
 
 	private InitData data;
+	private AccessToken token;
+	private JSApiTicket ticket;
+	private Gson gson;
 
-	public WebProcess(InitData data) {
+	public WebProcess(InitData data, AccessToken token, JSApiTicket ticket) {
 		this.data = data;
+		this.token = token;
+		this.ticket = ticket;
+		gson = new GsonBuilder().disableHtmlEscaping().create();
 	}
 
 	/**
@@ -150,7 +159,7 @@ public class WebProcess {
 	 */
 	public Map<String, String> getJSSDKConfig(String url) {
 		JSSign sign = new JSSign();
-		String ticket = TokenAndTicket.get().getTicketMap().get(data.getFlag()).getTicket();
+		String ticket = getTicket();
 		Map<String, String> map = sign.sign(ticket, url);
 		map.put("appId", data.getId());
 		return map;
@@ -236,7 +245,6 @@ public class WebProcess {
 
         actionInfo.put("scene", scene);
         params.put("action_info", actionInfo);
-        Gson gson = new Gson();
         return qrcodeRequset(gson.toJson(params));
 	}
 	
@@ -253,11 +261,10 @@ public class WebProcess {
 
         Map<String, Object> actionInfo = new HashMap<String, Object>();
         Map<String, Object> scene = new HashMap<String, Object>();
-        scene.put("scene_id", sceneStr);
+        scene.put("scene_str", sceneStr);
 
         actionInfo.put("scene", scene);
         params.put("action_info", actionInfo);
-        Gson gson = new Gson();
         return qrcodeRequset(gson.toJson(params));
 	}
 	
@@ -276,7 +283,6 @@ public class WebProcess {
 
         actionInfo.put("scene", scene);
         params.put("action_info", actionInfo);
-        Gson gson = new Gson();
         return qrcodeRequset(gson.toJson(params));
 	}
 	
@@ -291,11 +297,10 @@ public class WebProcess {
 
         Map<String, Object> actionInfo = new HashMap<String, Object>();
         Map<String, Object> scene = new HashMap<String, Object>();
-        scene.put("scene_id", sceneStr);
+        scene.put("scene_str", sceneStr);
 
         actionInfo.put("scene", scene);
         params.put("action_info", actionInfo);
-        Gson gson = new Gson();
         return qrcodeRequset(gson.toJson(params));
 	}
 	
@@ -305,7 +310,6 @@ public class WebProcess {
 	 * @return	ApiResult 二维码信息
 	 */
 	public QRCodeResult qrcodeRequset(String post) {
-		Gson gson = new Gson();
 		String url = C.QRCODE_WITH_PARAM.replace("ACCESS_TOKEN", getAccessToken());
 		String jsonStr = CommonUtil.httpsRequest(url, "POST", post);
 		JSONObject json = new JSONObject(jsonStr);
@@ -404,7 +408,6 @@ public class WebProcess {
         params.put("action", "long2short");
         params.put("long_url", longUrl);
 		String url = C.LONG_2_SHORT_URL.replace("ACCESS_TOKEN", getAccessToken());
-		Gson gson = new Gson();
 		String jsonStr = CommonUtil.httpsRequest(url, "POST", gson.toJson(params));
 		ShortUrl sUrl = gson.fromJson(jsonStr, ShortUrl.class);
 		if (sUrl.getErrcode() != 0) {
@@ -419,6 +422,10 @@ public class WebProcess {
 	
 	// FIXME 下面是私有方法
 	private String getAccessToken() {
-		return TokenAndTicket.get().getTokenMap().get(data.getFlag()).getAccess_token();
+		return this.token.getAccess_token();
+	}
+	
+	private String getTicket() {
+		return this.ticket.getTicket();
 	}
 }
