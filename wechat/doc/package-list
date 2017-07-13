@@ -5,6 +5,7 @@ com.wechat.corp.pojo.res.manager
 com.wechat.corp.pojo.upload
 com.wechat.menu
 com.wechat.mp.aes
+com.wechat.pay.pojo
 com.wechat.pojo.menu
 com.wechat.pojo.msg.event
 com.wechat.pojo.msg.req
