@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -35,17 +36,18 @@ public class Test {
 	static Map<String, Data> datas;
 
 	public static void main(String[] args) {
-		TestUtil util = new TestUtil(appId, secret, false, token, "", false);
-		String rUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe5e79628254bb7f7&redirect_uri=http://lrc.natappvip.cc/social-service/h5/unlock.html&response_type=code&scope=snsapi_userinfo&state=unlock#wechat_redirect";
-		
-		ShortUrl url = null;
-		try {
-			String uurl = new String(rUrl.getBytes(), "UTF-8");
-			url = util.getShortUrl(uurl);
-		} catch (UnsupportedEncodingException e1) {
-			e1.printStackTrace();
-		}
-		System.out.println(url.getShort_url());
-		util.getAndDownEternalQrcode(url.getShort_url(), "C:\\Users\\admin\\Desktop\\qrcodetest\\redirectUnlock");
+		System.out.println(UUID.randomUUID().toString().replaceAll("-", "").substring(0, 32));
+//		TestUtil util = new TestUtil(appId, secret, false, token, "", false);
+//		String rUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe5e79628254bb7f7&redirect_uri=http://lrc.natappvip.cc/social-service/h5/unlock.html&response_type=code&scope=snsapi_userinfo&state=unlock#wechat_redirect";
+//		
+//		ShortUrl url = null;
+//		try {
+//			String uurl = new String(rUrl.getBytes(), "UTF-8");
+//			url = util.getShortUrl(uurl);
+//		} catch (UnsupportedEncodingException e1) {
+//			e1.printStackTrace();
+//		}
+//		System.out.println(url.getShort_url());
+//		util.getAndDownEternalQrcode(url.getShort_url(), "C:\\Users\\admin\\Desktop\\qrcodetest\\redirectUnlock");
 	}
 }
