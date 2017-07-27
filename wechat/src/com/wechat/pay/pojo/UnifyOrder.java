@@ -24,7 +24,7 @@ public class UnifyOrder {
 	/** 标价币种 */
 	private String fee_type;
 	/** 标价金额 */
-	private int total_fee;
+	private Integer total_fee;
 	/** 终端IP */
 	private String spbill_create_ip;
 	/** 交易起始时间 */
@@ -43,6 +43,8 @@ public class UnifyOrder {
 	private String limit_pay;
 	/** 用户标识 */
 	private String openid;
+	/** 场景信息 */
+	private String scene_info;
 	public String getAppid() {
 		return appid;
 	}
@@ -163,10 +165,18 @@ public class UnifyOrder {
 	public void setOpenid(String openid) {
 		this.openid = openid;
 	}
-	public int getTotal_fee() {
+	public Integer getTotal_fee() {
 		return total_fee;
 	}
-	public void setTotal_fee(int total_fee) {
+	public void setTotal_fee(Integer total_fee) {
 		this.total_fee = total_fee;
+	}
+
+	public String getScene_info() {
+		return scene_info;
+	}
+
+	public void setScene_info(String scene_info) {
+		this.scene_info = scene_info;
 	}
 }

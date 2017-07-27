@@ -765,18 +765,27 @@ public class C {
 	 * </ol><br>
 	 */
 	public static final String LONG_2_SHORT_URL = "https://api.weixin.qq.com/cgi-bin/shorturl?access_token=ACCESS_TOKEN";
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	/**
+	 * 统一下单请求接口
+	 * <br>需要：【POST】
+	 * <ol><li>ACCESS_TOKEN &emsp; 企业号的调用接口凭证</li>
+	 * </ol><br>
+	 */
+	public static final String WXPAY_UNIFY_ORDER_URL = "https://api.mch.weixin.qq.com/pay/unifiedorder";
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * 
 	 * <br>需要：【】
