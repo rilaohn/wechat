@@ -99,10 +99,10 @@ public class MessageUtil {
 	public static final String RESP_MESSAGE_TYPE_MUSIC = "music";
 	// 响应消息类型：图文
 	public static final String RESP_MESSAGE_TYPE_NEWS = "news";
-	
+
 	private Token token;
 	private InitData initData;
-	
+
 	public MessageUtil(WechatData data) {
 		this.token = data.getToken();
 		this.initData = data.getInitData();
@@ -110,11 +110,12 @@ public class MessageUtil {
 
 	/**
 	 * 解析微信发来的请求（XML）
-	 * @param request	HttpServletRequest
-	 * @return			Map&lt;String, String&gt;对象
+	 *
+	 * @param request HttpServletRequest
+	 * @return Map&lt;String, String&gt;对象
 	 */
 	@SuppressWarnings("unchecked")
-	public Map<String, String> parseXml(HttpServletRequest request) {
+	public Map<String, String> parseXml(HttpServletRequest request, String stream) {
 
 		// 将解析结果存储在HashMap中
 		Map<String, String> map = new HashMap<String, String>();
@@ -127,16 +128,22 @@ public class MessageUtil {
 		String encryptType = request.getParameter("encrypt_type");
 		try {
 			if ((encryptType == null || encryptType.equals("raw")) && (!initData.isCorp())) {
-				inputStream = request.getInputStream();
+				if (stream == null)
+					inputStream = request.getInputStream();
+				else
+					inputStream = new ByteArrayInputStream(stream.getBytes());
 				encryptType = null;
 			} else {
-				isr = new InputStreamReader(request.getInputStream());
+				if (stream == null)
+					isr = new InputStreamReader(request.getInputStream());
+				else
+					isr = new InputStreamReader(new ByteArrayInputStream(stream.getBytes()));
 				br = new BufferedReader(isr);
 				String line = "";
 				while ((line = br.readLine()) != null) {
 					sb.append(line);
 				}
-				
+
 				// 密文
 				String encryptMsg = sb.toString();
 				// 微信加密签名
@@ -175,13 +182,13 @@ public class MessageUtil {
 					br = null;
 					isr = null;
 				}
-				
+
 				inputStream.close();
 				inputStream = null;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
+
 		}
 
 //		System.out.println("---MessageUtil.map: " + map.toString());
@@ -238,8 +245,9 @@ public class MessageUtil {
 
 	/**
 	 * 文本消息对象转换成xml
-	 * @param text	文本消息对象
-	 * @return		xml格式字符串
+	 *
+	 * @param text 文本消息对象
+	 * @return xml格式字符串
 	 */
 	public String messageToXml(TextMsg text) {
 		xStream.alias("xml", text.getClass());
@@ -248,8 +256,9 @@ public class MessageUtil {
 
 	/**
 	 * 图片消息对象转换成xml
-	 * @param text	图片消息对象
-	 * @return		xml格式字符串
+	 *
+	 * @param text 图片消息对象
+	 * @return xml格式字符串
 	 */
 	public String messageToXml(ImageMsg text) {
 		xStream.alias("xml", text.getClass());
@@ -258,8 +267,9 @@ public class MessageUtil {
 
 	/**
 	 * 语音消息对象转换成xml
-	 * @param text	语音消息对象
-	 * @return		xml格式字符串
+	 *
+	 * @param text 语音消息对象
+	 * @return xml格式字符串
 	 */
 	public String messageToXml(VoiceMsg text) {
 		xStream.alias("xml", text.getClass());
@@ -268,8 +278,9 @@ public class MessageUtil {
 
 	/**
 	 * 视频消息对象转换成xml
-	 * @param text	视频消息对象
-	 * @return		xml格式字符串
+	 *
+	 * @param text 视频消息对象
+	 * @return xml格式字符串
 	 */
 	public String messageToXml(VideoMsg text) {
 		xStream.alias("xml", text.getClass());
@@ -278,8 +289,9 @@ public class MessageUtil {
 
 	/**
 	 * 音乐消息对象转换成xml
-	 * @param text	音乐消息对象
-	 * @return		xml格式字符串
+	 *
+	 * @param text 音乐消息对象
+	 * @return xml格式字符串
 	 */
 	public String messageToXml(MusicMsg text) {
 		xStream.alias("xml", text.getClass());
@@ -288,8 +300,9 @@ public class MessageUtil {
 
 	/**
 	 * 图文消息对象转换成xml
-	 * @param text		图文消息对象
-	 * @return			xml格式字符串
+	 *
+	 * @param text 图文消息对象
+	 * @return xml格式字符串
 	 */
 	public String messageToXml(NewsMsg text) {
 		xStream.alias("xml", text.getClass());

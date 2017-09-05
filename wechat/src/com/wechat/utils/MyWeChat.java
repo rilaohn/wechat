@@ -1,5 +1,6 @@
 package com.wechat.utils;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,22 +110,6 @@ public class MyWeChat {
 	 */
 	public MyWeChat(String tokenStr, String encodingAESKey, boolean encrypt, String flag) {
 		this(new Token(tokenStr, encodingAESKey, encrypt), flag);
-	}
-
-	/**
-	 * 初始化
-	 * @param Token				用户自己设置的Token
-	 * @param encodingAESKey	AES加密密码
-	 * @param encrypt			是否加密
-	 * @param flag				配置WeChatInitServlet填写参数的标志字符串
-	 * @param request			HttpServletRequest请求
-	 */
-	public MyWeChat(String Token, String encodingAESKey, boolean encrypt, String flag, HttpServletRequest request) {
-		this(Token, encodingAESKey, encrypt, flag);
-		this.request = request;
-		process.setRequest(request);
-//		System.out.println("this.request" + this.request);
-//		System.out.println("parama.request : " + request);
 	}
 
 	/**
@@ -312,152 +297,68 @@ public class MyWeChat {
 
 	/**
 	 * 回复用户文本消息
-	 * @param request		HttpServletRequest请求
 	 * @param content		返回给用户的文本内容
 	 * @return respXml		xml格式文本消息字符串
 	 */
-	public String replyText(HttpServletRequest request, String content) {
+	public String replyText(String content) {
 		String respXml = "";
-		if (this.request != request) {
-			process.setRequest(request);
-		}
 		respXml = process.replyText(content);
 		return respXml;
 	}
 
 	/**
-	 * 回复用户文本消息
-	 * 初始化带有HttpServletRequest可以此方法
-	 * @param content		要回复的文本内容
-	 * @return				xml格式文本消息字符串
-	 */
-	public String replyText(String content) {
-		return request == null ? null : replyText(request, content);
-	}
-
-	/**
 	 * 回复用户图片消息
-	 * @param request	HttpServletRequest请求
 	 * @param image		Image类型实体
 	 * @return			xml格式图片消息字符串
 	 */
-	public String replyImage(HttpServletRequest request, Image image) {
+	public String replyImage(Image image) {
 		String respXml = "";
-		if (this.request != request) {
-			process.setRequest(request);
-		}
 		respXml = process.replyImage(image);
 		return respXml;
 	}
 
 	/**
-	 * 回复用户图片消息
-	 * 初始化带有HttpServletRequest可以此方法
-	 * @param image		Image类型实体
-	 * @return			xml格式图片消息字符串
-	 */
-	public String replyImage(Image image) {
-		return request == null ? null : replyImage(request, image);
-	}
-
-	/**
 	 * 返回语音消息
-	 * @param request	HttpServletRequest请求
 	 * @param voice		Voice实体
 	 * @return			xml格式语音消息字符串
 	 */
-	public String replyVoice(HttpServletRequest request, Voice voice) {
+	public String replyVoice(Voice voice) {
 		String respXml = "";
-		if (this.request != request) {
-			process.setRequest(request);
-		}
 		respXml = process.replyVoice(voice);
 		return respXml;
 	}
 
 	/**
-	 * 返回语音消息
-	 * 初始化带有HttpServletRequest可以此方法
-	 * @param voice		Voice实体
-	 * @return			xml格式语音消息字符串
-	 */
-	public String replyVoice(Voice voice) {
-		return request == null ? null : replyVoice(request, voice);
-	}
-
-	/**
 	 * 返回视频消息
-	 * @param request	HttpServletRequest请求
 	 * @param video		Video实体
 	 * @return			xml格式视频消息字符串
 	 */
-	public String replyVideo(HttpServletRequest request, Video video) {
+	public String replyVideo(Video video) {
 		String respXml = "";
-		if (this.request != request) {
-			process.setRequest(request);
-		}
 		respXml = process.replyVideo(video);
 		return respXml;
 	}
 
 	/**
-	 * 返回视频消息
-	 * 初始化带有HttpServletRequest可以此方法
-	 * @param video		Video实体
-	 * @return			xml格式视频消息字符串
-	 */
-	public String replyVideo(Video video) {
-		return request == null ? null : replyVideo(request, video);
-	}
-
-	/**
 	 * 返回音乐消息
-	 * @param request		HttpServletRequest请求
 	 * @param music			Music实体
 	 * @return				xml格式视音乐息字符串
 	 */
-	public String replyMusic(HttpServletRequest request, Music music) {
+	public String replyMusic( Music music) {
 		String respXml = "";
-		if (this.request != request) {
-			process.setRequest(request);
-		}
 		respXml = process.replyMusic(music);
 		return respXml;
 	}
 
 	/**
-	 * 返回音乐消息
-	 * 初始化带有HttpServletRequest可以此方法
-	 * @param music		Music实体
-	 * @return			xml格式视音乐息字符串
-	 */
-	public String replyMusic(Music music) {
-		return request == null ? null : replyMusic(request, music);
-	}
-
-	/**
 	 * 返回新闻消息
-	 * @param request		HttpServletRequest请求
 	 * @param articles		Article集合
 	 * @return				xml格式视新闻息字符串
 	 */
-	public String replyNews(HttpServletRequest request, List<Article> articles) {
+	public String replyNews(List<Article> articles) {
 		String respXml = "";
-		if (this.request != request) {
-			process.setRequest(request);
-		}
 		respXml = process.replyNews(articles);
 		return respXml;
-	}
-
-	/**
-	 * 返回新闻消息
-	 * 初始化带有HttpServletRequest可以此方法
-	 * @param articles	Article集合
-	 * @return			xml格式视新闻息字符串
-	 */
-	public String replyNews(List<Article> articles) {
-		return request == null ? null : replyNews(request, articles);
 	}
 
 	private void checkToken() {
@@ -1106,9 +1007,14 @@ public class MyWeChat {
 		return request;
 	}
 
-	public void setRequest(HttpServletRequest request) {
+	/**
+	 * 初始化消息回复
+	 * @param request		HttpServletRequest请求
+	 * @param stream	如果HttpServletRequest的InputStream没有被使用过，这里填写null；
+	 */
+	public void initReplyMessage(HttpServletRequest request, String stream) {
 		this.request = request;
-		process.setRequest(request);
+		process.setRequest(request, stream);
 	}
 
 	// FIXME 以下是企业号的方法
@@ -1743,13 +1649,30 @@ public class MyWeChat {
 
 	/**
 	 * 获取web授权的用户信息
-	 * @param accessToken	webAccessToken
 	 * @param openId		用户的openID
 	 * @return				WebUserInfo对象
 	 * @throws Exception	失败抛出异常
 	 */
-	public WebUserInfo getWebUserInfo(String accessToken, String openId) throws Exception {
-		return webProcess.getWebUserInfo(accessToken, openId);
+	public WebUserInfo getWebUserInfoByOpenId(String openId) throws Exception {
+		return webProcess.getWebUserInfo(accessToken.getAccess_token(), openId);
+	}
+
+	/**
+	 * 判断用户是否关注
+	 * @param openId		用户标识
+	 * @return	关注了返回true没有关注返回false
+	 */
+	public boolean userSubscribe(String openId){
+		return webProcess.userSubscribe(accessToken.getAccess_token(), openId);
+	}
+	
+	/**
+	 * 通过网页授权获取用户信息JSON
+	 * @param openId		用户标识
+	 * @return userInfoJson	用户基本信息
+	 */
+	public JSONObject getUserInfoJson(String openId){
+		return webProcess.getUserInfoJson(accessToken.getAccess_token(), openId);
 	}
 	
 	/**
@@ -1835,8 +1758,7 @@ public class MyWeChat {
 	
 	/**
 	 * 获取使用微信JSSDK的初始化参数
-	 * @param url		通过请求地址加上code和state的url	
-	 * @param code		用户code
+	 * @param url		通过请求地址加上code和state的url
 	 * @return			Signature对象
 	 */
 	public Signature getJSSDKConfigOutOpenId(String url) {

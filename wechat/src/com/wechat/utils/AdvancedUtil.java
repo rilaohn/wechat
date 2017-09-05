@@ -78,7 +78,7 @@ public class AdvancedUtil {
 		String urlStr = url.replace("ACCESS_TOKEN", accessToken);
 		// 通过网页授权获取用户信息
 		String jsonStr = CommonUtil.httpsRequest(urlStr, "GET", null);
-
+//		System.out.println(jsonStr);
 		JSONObject json = new JSONObject(jsonStr);
 		int errcode = -1;
 		errcode = json.getInt("errcode");
@@ -94,7 +94,7 @@ public class AdvancedUtil {
 			int expires_in = json.getInt("expires_in");
 			jsApiTicket.setExpires_in(expires_in);
 		} else {
-			String errmsg = "获取网页AccessToken失败\n错误代码(errcode)：" + json.getInt("errcode")
+			String errmsg = "获取网页JSApiTicket失败\n错误代码(errcode)：" + json.getInt("errcode")
 					+ "， 错误消息(errmsg)：" + json.getString("errmsg") + "。";
 			throw new Exception(errmsg);
 		}
@@ -132,6 +132,38 @@ public class AdvancedUtil {
 			throw new Exception(errmsg);
 		}
 		return webUserInfo;
+	}
+	
+	/**
+	 * 获取用户信息JSON
+	 * @param accessToken	网页授权接口调用凭证
+	 * @param openId		用户标识
+	 * @return userInfoJson	用户基本信息
+	 */
+	public static JSONObject getUserInfoJson(String accessToken, String openId){
+		JSONObject userInfoJson = null;
+		// 拼接请求地址
+		String requestUrl = GET_USER_INFO_URL.replace("ACCESS_TOKEN", accessToken)
+				.replace("OPENID", openId);
+		// 通过网页授权获取用户信息
+		String jsonStr = CommonUtil.httpsRequest(requestUrl, "GET", null);
+		userInfoJson = new JSONObject(jsonStr);
+		return userInfoJson;
+	}
+	
+	/**
+	 * 判断用户是否关注
+	 * @param accessToken	网页授权接口调用凭证
+	 * @param openId		用户标识
+	 * @return	关注了返回true没有关注返回false
+	 */
+	public static boolean userSubscribe(String accessToken, String openId){
+		JSONObject userInfoJson = getUserInfoJson(accessToken, openId);
+		int subscribe = userInfoJson.getInt("subscribe");
+		if (subscribe == 1) {
+			return true;
+		}
+		return false;
 	}
 
 	/**

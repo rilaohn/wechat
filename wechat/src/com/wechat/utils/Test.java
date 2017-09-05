@@ -3,6 +3,9 @@ package com.wechat.utils;
 import java.util.*;
 
 import com.wechat.pay.pojo.SignType;
+import com.wechat.pojo.token.InitData;
+import com.wechat.pojo.token.TokenAndTicket;
+import com.wechat.thread.TokenTicketThread;
 
 /**
  * 类名：Test.java <br>
@@ -16,19 +19,44 @@ public class Test {
 	private static String secret = "7e6f8fb31f2af6af97b5f3bff9bd8a95";
 	private static String token = "EmergencyUnlockingPlatformToken";
 	static Map<String, Data> datas;
+	static class Aaa {
+		long a = 5200;
+	}
 
 	public static void main(String[] args) {
-		Map<String, String> map = new HashMap<>();
-		map.put("key", " ");
-		map.put("body", "5555");
-		map.put("sign_type", " HMACSHA256 ");
-		System.out.println(map.get("body"));
-		map.put("body", "6666");
-		System.out.println(map.get("body"));
-		if (map.containsKey("sign_type") && map.get("sign_type").trim().equals(SignType.HMACSHA256.toString())){
-			System.out.println("gogogogogo");
-		} else
-			System.out.println("hahahahaha");
+//		boolean data1 = false;
+//		boolean data2 = false;
+//		if (data2 == data1){
+//			System.err.println("true");
+//		} else {
+//			System.err.println("false");
+//		}
+//		TestThreadInner inner = new TestThreadInner();
+//		inner.printStr();
+//		inner = null;
+//		long a = 123456789;
+//		System.out.println(a / 1000);
+//		Aaa aa = new Aaa();
+//		String lll = "456";
+//		if (aa == null || aa.a - 5000 > 180)
+//			lll = "46589";
+//		System.out.println(lll);
+//		String a = null;
+//		if (a == null){
+//		}
+//		Map<String, String> map = new HashMap<>();
+//		map.put("key", " ");
+//		map.put("body", "5555");
+//		map.put("sign_type", " HMACSHA256 ");
+//		System.out.println(map.get("body"));
+//		map.put("body", "6666");
+//		System.out.println(map.get("body"));
+//		map.put("body", "6666");
+//		System.out.println(map.get("body"));
+//		if (map.containsKey("sign_type") && map.get("sign_type").trim().equals(SignType.HMACSHA256.toString())){
+//			System.out.println("gogogogogo");
+//		} else
+//			System.out.println("hahahahaha");
 //		int i = 0;
 //		if (false && ++i > 0)
 //			System.out.println("true: " + i);
@@ -67,7 +95,19 @@ public class Test {
 //		}
 //		Result result = CodeUtil.decode("C:\\Users\\admin\\Desktop\\qrcodetest\\ha.jpg");
 //		System.out.println(result.toString());
-//		CodeUtil.getQRCode("http://www.xiangjingxi.com/#/myxiaoqu", "jpg", "C:\\Users\\admin\\Desktop\\qrcodetest\\myxiaoqu.jpg", 200, 200, 0);
+
+
+//		// 沙盒
+//		String url = "https://openauth.alipaydev.com/oauth2/publicAppAuthorize.htm?app_id=2016081600256167&scope=auth_base&redirect_uri=http://lrc.natappvip.cc/social-service/h5/alicityunlock.html";
+//		CodeUtil.getQRCode(url, "jpg", "C:\\Users\\admin\\Desktop\\qrcodetest\\alicityunlock.jpg", 512, 512, 0);
+//		// 应急开锁 城市服务
+//		String url = "https://openauth.alipay.com/oauth2/publicAppAuthorize.htm?app_id=2017082408355245&scope=auth_base&redirect_uri=http://lrc.natappvip.cc/social-service/h5/alicityunlock.html";
+//		CodeUtil.getQRCode(url, "jpg", "C:\\Users\\admin\\Desktop\\qrcodetest\\alicityunlockNotSandBox.jpg", 512, 512, 0);
+		// 急开锁 生活号
+		String url = "https://openauth.alipay.com/oauth2/publicAppAuthorize.htm?app_id=2017081708236463&scope=auth_base&redirect_uri=http://lrc.natappvip.cc/social-service/h5/alicityunlock.html";
+		CodeUtil.getQRCode(url, "jpg", "C:\\Users\\admin\\Desktop\\qrcodetest\\alicityunlockLife.jpg", 512, 512, 0);
+
+
 //		System.out.println(UUID.randomUUID().toString().replaceAll("-", "").substring(0, 32));
 //		TestUtil util = new TestUtil(appId, secret, false, token, "", false);
 //		String rUrl = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxe5e79628254bb7f7&redirect_uri=http://lrc.natappvip.cc/social-service/h5/unlock.html&response_type=code&scope=snsapi_userinfo&state=unlock#wechat_redirect";

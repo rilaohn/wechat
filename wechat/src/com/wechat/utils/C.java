@@ -80,6 +80,16 @@ public class C {
 	public static final String API_TICKET_URL = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=ACCESS_TOKEN&type=wx_card";
 
 	/**
+	 * 拉取用户信息(非web)
+	 * <br>需要：【GET】
+	 * <ol><li>ACCESS_TOKEN &emsp; 网页授权接口调用凭证</li>
+	 * <li>OPENID &emsp; 用户的唯一标识</li>
+	 * <li>lang &emsp; 返回国家地区语言版本，zh_CN 简体，zh_TW 繁体，en 英语</li>
+	 * </ol>
+	 */
+	public static final String GET_USER_INFO_URL = "https://api.weixin.qq.com/cgi-bin/user/info?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN";
+	
+	/**
 	 * 拉取用户信息(需scope为 snsapi_userinfo)
 	 * <br>需要：【GET】
 	 * <ol><li>ACCESS_TOKEN &emsp; 网页授权接口调用凭证</li>

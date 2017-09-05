@@ -1,5 +1,6 @@
 package com.wechat.process;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -73,20 +74,10 @@ public class MsgProcess {
 		reqMessageType = null;
 	}
 
-	public void setRequest(HttpServletRequest request) {
+	public void setRequest(HttpServletRequest request, String inputStream) {
 		try {
-			requestMap = messageUtil.parseXml(request);
+			requestMap = messageUtil.parseXml(request, inputStream);
 //			System.out.println("+++++++" + requestMap);
-			getUserMessage();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public MsgProcess(WechatData data, HttpServletRequest request) {
-		this(data);
-		try {
-			requestMap = messageUtil.parseXml(request);
 			getUserMessage();
 		} catch (Exception e) {
 			e.printStackTrace();

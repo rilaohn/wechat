@@ -1,5 +1,7 @@
 package com.wechat.process;
 
+import static com.wechat.utils.C.WEB_USER_INFO_URL;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,6 +82,26 @@ public class WebProcess {
 	 */
 	public WebUserInfo getWebUserInfo(String accessToken, String openId) throws Exception {
 		return AdvancedUtil.getWebUserInfo(accessToken, openId);
+	}
+
+	/**
+	 * 判断用户是否关注
+	 * @param accessToken	网页授权接口调用凭证
+	 * @param openId		用户标识
+	 * @return	关注了返回true没有关注返回false
+	 */
+	public boolean userSubscribe(String accessToken, String openId){
+		return AdvancedUtil.userSubscribe(accessToken, openId);
+	}
+	
+	/**
+	 * 通过网页授权获取用户信息JSON
+	 * @param accessToken	网页授权接口调用凭证
+	 * @param openId		用户标识
+	 * @return userInfoJson	用户基本信息
+	 */
+	public JSONObject getUserInfoJson(String accessToken, String openId){
+		return AdvancedUtil.getUserInfoJson(accessToken, openId);
 	}
 
 	/**

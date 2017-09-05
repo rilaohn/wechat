@@ -1,57 +1,20 @@
 package com.wechat.utils;
 
-import static com.wechat.utils.C.ACCESS_TOKEN_URL;
-import static com.wechat.utils.C.CORP_ACCESSTOKEN;
-import static com.wechat.utils.C.CORP_JSAPI_TICKET;
-import static com.wechat.utils.C.JSAPI_TICKET_URL;
-
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.json.JSONObject;
-
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.wechat.cache.WXCache;
 import com.wechat.corp.pojo.auth.login.LoginInfo;
-import com.wechat.corp.pojo.res.manager.AgentInfo;
-import com.wechat.corp.pojo.res.manager.Department;
-import com.wechat.corp.pojo.res.manager.DepartmentUser;
-import com.wechat.corp.pojo.res.manager.GetAgent;
-import com.wechat.corp.pojo.res.manager.GetBatchResult;
-import com.wechat.corp.pojo.res.manager.GetTagUserSimple;
-import com.wechat.corp.pojo.res.manager.GetUser;
-import com.wechat.corp.pojo.res.manager.NameValue;
-import com.wechat.corp.pojo.res.manager.Tag;
-import com.wechat.corp.pojo.res.manager.TagUserInfoSimple;
-import com.wechat.corp.pojo.res.manager.UserInfo;
+import com.wechat.corp.pojo.res.manager.*;
 import com.wechat.corp.pojo.upload.MPNewsBack;
 import com.wechat.corp.pojo.upload.MaterialItem;
 import com.wechat.menu.MenuUtil;
 import com.wechat.pojo.menu.Menu;
 import com.wechat.pojo.menu.View;
-import com.wechat.pojo.msg.resp.Article;
-import com.wechat.pojo.msg.resp.Image;
-import com.wechat.pojo.msg.resp.Music;
-import com.wechat.pojo.msg.resp.Video;
-import com.wechat.pojo.msg.resp.Voice;
+import com.wechat.pojo.msg.resp.*;
 import com.wechat.pojo.msg.send.kf.News;
 import com.wechat.pojo.msg.send.kf.WXCard;
 import com.wechat.pojo.msg.send.template.TemplateData;
 import com.wechat.pojo.msg.send.template.TemplateList;
-import com.wechat.pojo.token.AccessToken;
-import com.wechat.pojo.token.InitData;
-import com.wechat.pojo.token.JSApiTicket;
-import com.wechat.pojo.token.QRCodeResult;
-import com.wechat.pojo.token.ShortUrl;
-import com.wechat.pojo.token.Token;
-import com.wechat.pojo.token.TokenAndTicket;
-import com.wechat.pojo.token.WebAccessToken;
-import com.wechat.pojo.token.WechatData;
+import com.wechat.pojo.token.*;
 import com.wechat.pojo.user.CorpWebUserInfo;
 import com.wechat.pojo.user.CorpWebUserTicket;
 import com.wechat.pojo.user.Signature;
@@ -60,13 +23,21 @@ import com.wechat.process.CorpProcess;
 import com.wechat.process.MsgProcess;
 import com.wechat.process.SendMessage;
 import com.wechat.process.WebProcess;
+import org.json.JSONObject;
 
-public class TestUtil {
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+
+public class WXUtil {
+	private String appId;
+	private String secret;
+	private boolean isCorp;
 	private InitData initData;
 	private Token token;
 	private WechatData wechatData;
-	private AccessToken accessToken;
-	private JSApiTicket jsApiTicket;
 	private WebProcess webProcess;
 	private SendMessage send;
 	private CorpProcess corp;
@@ -74,27 +45,33 @@ public class TestUtil {
 	private CheckUtil util;
 	private HttpServletRequest request;
 	private MenuUtil menuUtil;
-	public TestUtil(String appId, String secret, boolean isCorp) {
+	private String flag;
+	public WXUtil(String appId, String secret, boolean isCorp, String flag) {
+		this.appId = appId;
+		this.secret = secret;
+		this.isCorp = isCorp;
+		this.flag = flag;
 		this.initData = new InitData();
 		this.initData.setId(appId);
 		this.initData.setSecret(secret);
 		this.initData.setCorp(isCorp);
-		if (getTokenAndTicket(initData)) {
-			webProcess = new WebProcess(initData, this.accessToken, this.jsApiTicket);
-		}
+		this.initData.setFlag(flag);
 		util = new CheckUtil();
-		menuUtil = new MenuUtil(this.accessToken);
-		send = new SendMessage(this.accessToken.getAccess_token());
+		process = null;
+		menuUtil = null;
+		webProcess = null;
+		send = null;
+		corp = null;
 	}
-	public TestUtil(String appId, String secret, boolean isCorp, Token token) {
-		this(appId, secret, isCorp);
+	public WXUtil(String appId, String secret, boolean isCorp, String flag, Token token) {
+		this(appId, secret, isCorp, flag);
 		this.token = token;
 		this.wechatData.setInitData(initData);
 		this.wechatData.setToken(token);
 	}
-	
-	public TestUtil(String appId, String secret, boolean isCorp, String token, String encodingAESKey, boolean encrypt) {
-		this(appId, secret, isCorp);
+
+	public WXUtil(String appId, String secret, boolean isCorp, String flag, String token, String encodingAESKey, boolean encrypt) {
+		this(appId, secret, isCorp, flag);
 		this.token = new Token();
 		this.token.setToken(token);
 		this.token.setEncodingAESKey(encodingAESKey);
@@ -102,57 +79,17 @@ public class TestUtil {
 		this.wechatData = new WechatData();
 		this.wechatData.setInitData(initData);
 		this.wechatData.setToken(this.token);
-		process = new MsgProcess(wechatData);
-		corp = new CorpProcess(wechatData, this.accessToken, this.jsApiTicket);
 	}
-	
+
 	public AccessToken getAccessToken() {
-		return this.accessToken;
+		return WXCache.get(appId, secret, isCorp, flag).getAccessToken(flag);
 	}
-	
+
 	public JSApiTicket getJSApiTicket() {
-		return this.jsApiTicket;
+		return WXCache.get(appId, secret, isCorp, flag).getJSApiTicket(flag);
 	}
-	
-	private boolean getTokenAndTicket(InitData data) {
-		String urlStr = "";
-		boolean success;
-		if (!data.isCorp()) {
-			urlStr = ACCESS_TOKEN_URL.replace("APPID", data.getId()).replace("APPSECRET", data.getSecret());
-		} else {
-			urlStr = CORP_ACCESSTOKEN.replace("id=id", "id=" + data.getId()).replace("secret=secrect",
-					"secret=" + data.getSecret());
-		}
-		String jsonStr = CommonUtil.httpsRequest(urlStr, "GET", null);
-		Gson gson = new Gson();
-		AccessToken accessToken = gson.fromJson(jsonStr, AccessToken.class);
-		int Expires_in = accessToken.getExpires_in();
-		if (accessToken == null) {
-			try {
-				throw new Exception("获取AccessToken失败");
-			} catch (Exception e) {
-				e.printStackTrace();
-				success = false;
-			}
-		}
-		this.accessToken = accessToken;
-		String url = null;
-		if (data.isCorp()) {
-			url = CORP_JSAPI_TICKET;
-		} else {
-			url = JSAPI_TICKET_URL;
-		}
-		try {
-			JSApiTicket jsApiTicket = AdvancedUtil.getJSApiTicket(url, accessToken.getAccess_token());
-			this.jsApiTicket = jsApiTicket;
-			success = true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			success = false;
-		}
-		return success;
-	}
-	
+
+
 	/**
 	 * 检查请求是否来自微信
 	 * @param request		HttpServletRequest请求
@@ -200,7 +137,7 @@ public class TestUtil {
 
 	/**
 	 * 检查请求是否来自微信
-	 * 
+	 *
 	 * @param signature		微信加密签名
 	 * @param timestamp		时间戳
 	 * @param nonce			随机数
@@ -217,7 +154,7 @@ public class TestUtil {
 
 	/**
 	 * 检查请求是否来自微信
-	 * 
+	 *
 	 * @param signature		微信加密签名
 	 * @param timestamp		时间戳
 	 * @param nonce			随机数
@@ -261,6 +198,7 @@ public class TestUtil {
 	 * @return					成功TRUE，失败FALSE
 	 */
 	public boolean createMenu(Menu menu, boolean isPersonality) {
+		instanceMenuUtil();
 		Gson gson = new Gson();
 		String oldMenu = getMenu();
 		String newMenu = gson.toJson(menu);
@@ -271,11 +209,13 @@ public class TestUtil {
 		return result;
 	}
 
+
 	/**
 	 * 删除菜单
 	 * @return		成功TRUE，失败FALSE
 	 */
 	public boolean deleteMenu() {
+		instanceMenuUtil();
 		return menuUtil.deleteMenu();
 	}
 
@@ -284,6 +224,7 @@ public class TestUtil {
 	 * @return		json字符串数据
 	 */
 	public String getMenu() {
+		instanceMenuUtil();
 		return menuUtil.getMenu();
 	}
 
@@ -292,6 +233,7 @@ public class TestUtil {
 	 * @return 自定义菜单配置字符串
 	 */
 	public String getMenuInfo() {
+		instanceMenuUtil();
 		return menuUtil.getMenuInfo();
 	}
 
@@ -304,6 +246,7 @@ public class TestUtil {
 	 * @return				菜单view对象
 	 */
 	public View getWebView(String name, String REDIRECT_URI, String SCOPE, String STATE) {
+		instanceMenuUtil();
 		return menuUtil.getWebView(name, initData.getId(), REDIRECT_URI, SCOPE, STATE);
 	}
 
@@ -314,6 +257,7 @@ public class TestUtil {
 	 * @return		菜单view对象
 	 */
 	public View getWebView(String name, String url) {
+		instanceMenuUtil();
 		return menuUtil.getWebView(name, url);
 	}
 
@@ -323,6 +267,7 @@ public class TestUtil {
 	 * @return respXml		xml格式文本消息字符串
 	 */
 	public String replyText(String content) {
+		instanceMsgProcess();
 		String respXml = "";
 		respXml = process.replyText(content);
 		return respXml;
@@ -334,6 +279,7 @@ public class TestUtil {
 	 * @return			xml格式图片消息字符串
 	 */
 	public String replyImage(Image image) {
+		instanceMsgProcess();
 		String respXml = "";
 		respXml = process.replyImage(image);
 		return respXml;
@@ -345,6 +291,7 @@ public class TestUtil {
 	 * @return			xml格式语音消息字符串
 	 */
 	public String replyVoice(Voice voice) {
+		instanceMsgProcess();
 		String respXml = "";
 		respXml = process.replyVoice(voice);
 		return respXml;
@@ -356,6 +303,7 @@ public class TestUtil {
 	 * @return			xml格式视频消息字符串
 	 */
 	public String replyVideo(Video video) {
+		instanceMsgProcess();
 		String respXml = "";
 		respXml = process.replyVideo(video);
 		return respXml;
@@ -367,6 +315,7 @@ public class TestUtil {
 	 * @return				xml格式视音乐息字符串
 	 */
 	public String replyMusic(Music music) {
+		instanceMsgProcess();
 		String respXml = "";
 		respXml = process.replyMusic(music);
 		return respXml;
@@ -378,6 +327,7 @@ public class TestUtil {
 	 * @return				xml格式视新闻息字符串
 	 */
 	public String replyNews(List<Article> articles) {
+		instanceMsgProcess();
 		String respXml = "";
 		respXml = process.replyNews(articles);
 		return respXml;
@@ -398,6 +348,7 @@ public class TestUtil {
 	 * @return				返回用户发送的消息类型
 	 */
 	public String getUserMessageType() {
+		instanceMsgProcess();
 		return process.getRequestMessageType();
 	}
 
@@ -406,6 +357,7 @@ public class TestUtil {
 	 * @return		返回用户消息的map
 	 */
 	public Map<String, String> getUserMessageMap() {
+		instanceMsgProcess();
 		return process.getMessageMap();
 	}
 
@@ -416,6 +368,7 @@ public class TestUtil {
 	 * @param password		客服账号登录密码
 	 */
 	public void addKF(String kf_account, String nickname, String password) {
+		instanceSendMessage();
 		send.operateKF(kf_account, nickname, password, 0);
 	}
 
@@ -426,6 +379,7 @@ public class TestUtil {
 	 * @param password		客服账号登录密码
 	 */
 	public void updateKF(String kf_account, String nickname, String password) {
+		instanceSendMessage();
 		send.operateKF(kf_account, nickname, password, 1);
 	}
 
@@ -436,6 +390,7 @@ public class TestUtil {
 	 * @param password		客服账号登录密码
 	 */
 	public void deleteKF(String kf_account, String nickname, String password) {
+		instanceSendMessage();
 		send.operateKF(kf_account, nickname, password, 2);
 	}
 
@@ -445,6 +400,7 @@ public class TestUtil {
 	 * @param imagePath		图片路劲
 	 */
 	public void setKFAvatar(String kf_account, String imagePath) {
+		instanceSendMessage();
 		send.setKFAvatar(kf_account, imagePath);
 	}
 
@@ -453,6 +409,7 @@ public class TestUtil {
 	 * @return		客服列表
 	 */
 	public String getAllKF() {
+		instanceSendMessage();
 		return send.getAllKF();
 	}
 
@@ -463,6 +420,7 @@ public class TestUtil {
 	 * @return 			成回TRUE，失败FALSE
 	 */
 	public boolean kfSendText(String touser, String content) {
+		instanceSendMessage();
 		return send.kfSendText(touser, content);
 	}
 
@@ -473,6 +431,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendImage(String touser, String media_id) {
+		instanceSendMessage();
 		return send.kfSendImage(touser, media_id);
 	}
 
@@ -483,6 +442,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendVoice(String touser, String media_id) {
+		instanceSendMessage();
 		return send.kfSendVoice(touser, media_id);
 	}
 
@@ -496,7 +456,8 @@ public class TestUtil {
 	 * @return 					成回TRUE，失败FALSE
 	 */
 	public boolean kfSendVideo(String touser, String media_id, String thumb_media_id, String title,
-			String description) {
+							   String description) {
+		instanceSendMessage();
 		return send.kfSendVideo(touser, media_id, thumb_media_id, title, description);
 	}
 
@@ -507,6 +468,7 @@ public class TestUtil {
 	 * @return 			成回TRUE，失败FALSE
 	 */
 	public boolean kfSendVideo(String touser, com.wechat.pojo.msg.send.kf.Video video) {
+		instanceSendMessage();
 		return send.kfSendVideo(touser, video);
 	}
 
@@ -517,6 +479,7 @@ public class TestUtil {
 	 * @return 			成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMusic(String touser, com.wechat.pojo.msg.send.kf.Music music) {
+		instanceSendMessage();
 		return send.kfSendMusic(touser, music);
 	}
 
@@ -531,7 +494,8 @@ public class TestUtil {
 	 * @return 					成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMusic(String touser, String title, String description, String musicurl, String hqmusicurl,
-			String thumb_media_id) {
+							   String thumb_media_id) {
+		instanceSendMessage();
 		return send.kfSendMusic(touser, title, description, musicurl, hqmusicurl, thumb_media_id);
 	}
 
@@ -542,6 +506,7 @@ public class TestUtil {
 	 * @return 			成回TRUE，失败FALSE
 	 */
 	public boolean kfSendNews(String touser, News news) {
+		instanceSendMessage();
 		return send.kfSendNews(touser, news);
 	}
 
@@ -552,6 +517,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendNews(String touser, List<com.wechat.pojo.msg.send.kf.Article> articles) {
+		instanceSendMessage();
 		return send.kfSendNews(touser, articles);
 	}
 
@@ -562,6 +528,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMPNews(String touser, String media_id) {
+		instanceSendMessage();
 		return send.kfSendMPNews(touser, media_id);
 	}
 
@@ -572,6 +539,7 @@ public class TestUtil {
 	 * @return 			成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMPNews(String touser, WXCard wxcard) {
+		instanceSendMessage();
 		return send.kfSendCard(touser, wxcard);
 	}
 
@@ -583,6 +551,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendTextBy(String touser, String content, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendTextBy(touser, content, kf_account);
 	}
 
@@ -594,6 +563,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendImageBy(String touser, String media_id, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendImageBy(touser, media_id, kf_account);
 	}
 
@@ -605,6 +575,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendVoiceBy(String touser, String media_id, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendVoiceBy(touser, media_id, kf_account);
 	}
 
@@ -619,7 +590,8 @@ public class TestUtil {
 	 * @return 					成回TRUE，失败FALSE
 	 */
 	public boolean kfSendVideoBy(String touser, String media_id, String thumb_media_id, String title,
-			String description, String kf_account) {
+								 String description, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendVideoBy(touser, media_id, thumb_media_id, title, description, kf_account);
 	}
 
@@ -631,6 +603,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendVideoBy(String touser, com.wechat.pojo.msg.send.kf.Video video, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendVideoBy(touser, video, kf_account);
 	}
 
@@ -642,6 +615,7 @@ public class TestUtil {
 	 * @return 				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMusicBy(String touser, com.wechat.pojo.msg.send.kf.Music music, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendMusicBy(touser, music, kf_account);
 	}
 
@@ -657,7 +631,8 @@ public class TestUtil {
 	 * @return 					成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMusicBy(String touser, String title, String description, String musicurl, String hqmusicurl,
-			String thumb_media_id, String kf_account) {
+								 String thumb_media_id, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendMusicBy(touser, title, description, musicurl, hqmusicurl, thumb_media_id, kf_account);
 	}
 
@@ -669,6 +644,7 @@ public class TestUtil {
 	 * @return 					成回TRUE，失败FALSE
 	 */
 	public boolean kfSendNewsBy(String touser, News news, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendNewsBy(touser, news, kf_account);
 	}
 
@@ -680,6 +656,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendNewsBy(String touser, List<com.wechat.pojo.msg.send.kf.Article> articles, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendNewsBy(touser, articles, kf_account);
 	}
 
@@ -691,6 +668,7 @@ public class TestUtil {
 	 * @return					成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMPNewsBy(String touser, String media_id, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendMPNewsBy(touser, media_id, kf_account);
 	}
 
@@ -702,6 +680,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean kfSendMPNews(String touser, WXCard wxcard, String kf_account) {
+		instanceSendMessage();
 		return send.kfSendCardBy(touser, wxcard, kf_account);
 	}
 
@@ -715,6 +694,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massMPNews2All(boolean is_to_all, int group_id, String media_id) {
+		instanceSendMessage();
 		return send.massMPNews2All(is_to_all, group_id, media_id);
 	}
 
@@ -728,6 +708,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massText2All(boolean is_to_all, int group_id, String content) {
+		instanceSendMessage();
 		return send.massText2All(is_to_all, group_id, content);
 	}
 
@@ -741,6 +722,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massVoice2All(boolean is_to_all, int group_id, String media_id) {
+		instanceSendMessage();
 		return send.massVoice2All(is_to_all, group_id, media_id);
 	}
 
@@ -754,6 +736,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massImage2All(boolean is_to_all, int group_id, String media_id) {
+		instanceSendMessage();
 		return send.massImage2All(is_to_all, group_id, media_id);
 	}
 
@@ -767,6 +750,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massVideo2All(boolean is_to_all, int group_id, String media_id) {
+		instanceSendMessage();
 		return send.massVideo2All(is_to_all, group_id, media_id);
 	}
 
@@ -782,6 +766,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massVideo2All(boolean is_to_all, int group_id, String videoPath, String title, String description) {
+		instanceSendMessage();
 		return send.massVideo2All(is_to_all, group_id, videoPath, title, description);
 	}
 
@@ -795,6 +780,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massCard2All(boolean is_to_all, int group_id, String card_id) {
+		instanceSendMessage();
 		return send.massCard2All(is_to_all, group_id, card_id);
 	}
 
@@ -805,36 +791,40 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massMPNews2List(List<String> touser, String media_id) {
+		instanceSendMessage();
 		return send.massMPNews2List(touser, media_id);
 	}
 
 	/**
 	 * 通过用户列表群发*文本*消息
 	 * @param touser		用户列表
-	 * @param content		文本内容	
+	 * @param content		文本内容
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massText2List(List<String> touser, String content) {
+		instanceSendMessage();
 		return send.massText2List(touser, content);
 	}
 
 	/**
 	 * 通过用户列表群发*语音*消息
 	 * @param touser		用户列表
-	 * @param media_id		语音id	
+	 * @param media_id		语音id
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massVoice2List(List<String> touser, String media_id) {
+		instanceSendMessage();
 		return send.massVoice2List(touser, media_id);
 	}
 
 	/**
 	 * 通过用户列表群发*图片*消息
 	 * @param touser		用户列表
-	 * @param media_id		图片id	
+	 * @param media_id		图片id
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massImage2List(List<String> touser, String media_id) {
+		instanceSendMessage();
 		return send.massImage2List(touser, media_id);
 	}
 
@@ -847,6 +837,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massVideo2List(List<String> touser, String videoPath, String title, String description) {
+		instanceSendMessage();
 		return send.massVideo2List(touser, videoPath, title, description);
 	}
 
@@ -857,6 +848,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean massWXCard2List(List<String> touser, String card_id) {
+		instanceSendMessage();
 		return send.massWXCard2List(touser, card_id);
 	}
 
@@ -866,6 +858,7 @@ public class TestUtil {
 	 * @return			成回TRUE，失败FALSE
 	 */
 	public boolean deleteMassMsg(String msg_id) {
+		instanceSendMessage();
 		return send.deleteMassMsg(msg_id);
 	}
 
@@ -877,6 +870,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean previewMassMPNews(String touser, String towxname, String media_id) {
+		instanceSendMessage();
 		return send.previewMassMPNews(touser, towxname, media_id);
 	}
 
@@ -888,6 +882,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean previewMassText(String touser, String towxname, String content) {
+		instanceSendMessage();
 		return send.previewMassText(touser, towxname, content);
 	}
 
@@ -899,6 +894,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean previewMassVoice(String touser, String towxname, String media_id) {
+		instanceSendMessage();
 		return send.previewMassVoice(touser, towxname, media_id);
 	}
 
@@ -910,6 +906,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean previewMassImage(String touser, String towxname, String media_id) {
+		instanceSendMessage();
 		return send.previewMassImage(touser, towxname, media_id);
 	}
 
@@ -921,6 +918,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean previewMassVideo(String touser, String towxname, String media_id) {
+		instanceSendMessage();
 		return send.previewMassVideo(touser, towxname, media_id);
 	}
 
@@ -932,6 +930,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean previewMassCard(String touser, String towxname, WXCard wxcard) {
+		instanceSendMessage();
 		return send.previewMassCard(touser, towxname, wxcard);
 	}
 
@@ -942,6 +941,7 @@ public class TestUtil {
 	 * @return					成回TRUE，失败FALSE
 	 */
 	public boolean setIndustry(int industry_id1, int industry_id2) {
+		instanceSendMessage();
 		return send.setIndustry(industry_id1, industry_id2);
 	}
 
@@ -950,6 +950,7 @@ public class TestUtil {
 	 * @return		行业信息的字符串
 	 */
 	public String getIndustry() {
+		instanceSendMessage();
 		return send.getIndustry();
 	}
 
@@ -959,6 +960,7 @@ public class TestUtil {
 	 * @return						成回TRUE，失败FALSE
 	 */
 	public String getTemplateId(String template_id_short) {
+		instanceSendMessage();
 		return send.getTemplateId(template_id_short);
 	}
 
@@ -967,6 +969,7 @@ public class TestUtil {
 	 * @return	成回TRUE，失败FALSE
 	 */
 	public TemplateList getTemplateList() {
+		instanceSendMessage();
 		return send.getTemplateList();
 	}
 
@@ -976,6 +979,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean deleteTemplate(String template_id) {
+		instanceSendMessage();
 		return send.deleteTemplate(template_id);
 	}
 
@@ -988,6 +992,7 @@ public class TestUtil {
 	 * @return				成回TRUE，失败FALSE
 	 */
 	public boolean sendTemplateMsg(String touser, String template_id, String url, TemplateData data) {
+		instanceSendMessage();
 		return send.sendTemplateMsg(touser, template_id, url, data);
 	}
 
@@ -997,6 +1002,7 @@ public class TestUtil {
 	 * @return			图片的url
 	 */
 	public String uploadImage(String path) {
+		instanceSendMessage();
 		return send.uploadImage(path);
 	}
 
@@ -1009,6 +1015,7 @@ public class TestUtil {
 	 * @return				视频的Media_id
 	 */
 	public String uploadVideo(String reqUrl, String path, String title, String description) {
+		instanceSendMessage();
 		return send.uploadVideo(reqUrl, path, title, description);
 	}
 
@@ -1020,10 +1027,11 @@ public class TestUtil {
 	 * @return			素材列表字符串
 	 */
 	public String getMaterialList(String type, int offset, int count) {
+		instanceSendMessage();
 		return send.getMaterialList(type, offset, count);
 	}
 
-	
+
 
 	public HttpServletRequest getRequest() {
 		return request;
@@ -1032,11 +1040,12 @@ public class TestUtil {
 	/**
 	 * 初始化消息回复
 	 * @param request		HttpServletRequest请求
-	 * @param stream	如果HttpServletRequest的InputStream没有被使用过，这里填写null；
+	 * @param inputStream	如果HttpServletRequest的InputStream没有被使用过，这里填写null；
 	 */
-	public void initReplyMessage(HttpServletRequest request, String stream) {
+	public void initReplyMessage(HttpServletRequest request, String inputStream) {
+		instanceMsgProcess();
 		this.request = request;
-		process.setRequest(request, stream);
+		process.setRequest(request, inputStream);
 	}
 
 	// FIXME 以下是企业号的方法
@@ -1048,6 +1057,7 @@ public class TestUtil {
 	 * @return			返回echostr明文
 	 */
 	public String checkMsgSignature(HttpServletRequest request) {
+		instanceCorpProcess();
 		return corp.checkSignature(request);
 	}
 
@@ -1062,7 +1072,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendText(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			String content, int safe) {
+								String content, int safe) {
+		instanceCorpProcess();
 		return corp.sendText(touser, toparty, totag, agentid, content, safe);
 	}
 
@@ -1077,7 +1088,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendImage(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			String media_id, int safe) {
+								 String media_id, int safe) {
+		instanceCorpProcess();
 		return corp.sendImage(touser, toparty, totag, agentid, media_id, safe);
 	}
 
@@ -1092,7 +1104,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendVoice(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			String media_id, int safe) {
+								 String media_id, int safe) {
+		instanceCorpProcess();
 		return corp.sendVoice(touser, toparty, totag, agentid, media_id, safe);
 	}
 
@@ -1109,7 +1122,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendVideo(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			String media_id, String title, String description, int safe) {
+								 String media_id, String title, String description, int safe) {
+		instanceCorpProcess();
 		return corp.sendVideo(touser, toparty, totag, agentid, media_id, title, description, safe);
 	}
 
@@ -1124,7 +1138,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendVideo(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			com.wechat.pojo.msg.send.kf.Video video, int safe) {
+								 com.wechat.pojo.msg.send.kf.Video video, int safe) {
+		instanceCorpProcess();
 		return corp.sendVideo(touser, toparty, totag, agentid, video, safe);
 	}
 
@@ -1139,7 +1154,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendFile(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			String media_id, int safe) {
+								String media_id, int safe) {
+		instanceCorpProcess();
 		return corp.sendFile(touser, toparty, totag, agentid, media_id, safe);
 	}
 
@@ -1153,7 +1169,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendNews(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			List<com.wechat.pojo.msg.send.kf.Article> articles) {
+								List<com.wechat.pojo.msg.send.kf.Article> articles) {
+		instanceCorpProcess();
 		return corp.sendNews(touser, toparty, totag, agentid, articles);
 	}
 
@@ -1168,7 +1185,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendMPNews(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			String media_id, int safe) {
+								  String media_id, int safe) {
+		instanceCorpProcess();
 		return corp.sendMPNews(touser, toparty, totag, agentid, media_id, safe);
 	}
 
@@ -1183,7 +1201,8 @@ public class TestUtil {
 	 * @return				失败false，成功true
 	 */
 	public boolean corpSendMPNews(List<String> touser, List<String> toparty, List<String> totag, int agentid,
-			List<com.wechat.corp.pojo.msg.send.Article> articles, int safe) {
+								  List<com.wechat.corp.pojo.msg.send.Article> articles, int safe) {
+		instanceCorpProcess();
 		return corp.sendMPNews(touser, toparty, totag, agentid, articles, safe);
 	}
 
@@ -1194,6 +1213,7 @@ public class TestUtil {
 	 * @return			用户的openid
 	 */
 	public String userid2Openid(String userid, int agentid) {
+		instanceCorpProcess();
 		return corp.userid2Openid(userid, agentid);
 	}
 
@@ -1203,6 +1223,7 @@ public class TestUtil {
 	 * @return			用户的userid
 	 */
 	public String openid2Userid(String openid) {
+		instanceCorpProcess();
 		return corp.openid2Userid(openid);
 	}
 
@@ -1215,6 +1236,7 @@ public class TestUtil {
 	 * @return				企业号成员登录授权url
 	 */
 	public String getCorpLoginPageUrl(String corpId, String redirectId, String state, String userType) {
+		instanceCorpProcess();
 		return corp.getCorpLoginPageUrl(corpId, redirectId, state, userType);
 	}
 
@@ -1225,6 +1247,7 @@ public class TestUtil {
 	 * @return			com.wechat.corp.pojo.login.LoginInfo对象
 	 */
 	public LoginInfo getCorpLoginUserInfo(String authCode) {
+		instanceCorpProcess();
 		return corp.getCorpLoginUserInfo(authCode);
 	}
 
@@ -1236,6 +1259,7 @@ public class TestUtil {
 	 * @return				登录企业号官网的url
 	 */
 	public String getCorpLoginUrl(String loginTicket, String target, int agentid) {
+		instanceCorpProcess();
 		return corp.getCorpLoginUrl(loginTicket, target, agentid);
 	}
 
@@ -1245,6 +1269,7 @@ public class TestUtil {
 	 * @return			com.wechat.corp.pojo.res.manager.GetAgent对象
 	 */
 	public GetAgent getAgent(String agentid) {
+		instanceCorpProcess();
 		return corp.getAgent(agentid);
 	}
 
@@ -1263,8 +1288,9 @@ public class TestUtil {
 	 * @return						成功true，失败false
 	 */
 	public boolean setAgent(String agentid, String reportLocationFlag, String logoMediaid, String name,
-			String description, String redirectDomain, int isreportuser, int isreportenter, String home_url,
-			String chatExtensionUrl) {
+							String description, String redirectDomain, int isreportuser, int isreportenter, String home_url,
+							String chatExtensionUrl) {
+		instanceCorpProcess();
 		return corp.setAgent(agentid, reportLocationFlag, logoMediaid, name, description, redirectDomain, isreportuser,
 				isreportenter, home_url, chatExtensionUrl);
 	}
@@ -1274,6 +1300,7 @@ public class TestUtil {
 	 * @return	com.wechat.corp.pojo.res.manager.AgentInfo集合
 	 */
 	public List<AgentInfo> getAgentList() {
+		instanceCorpProcess();
 		return corp.getAgentList();
 	}
 
@@ -1283,6 +1310,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public boolean twovalidate(String userid) {
+		instanceCorpProcess();
 		return corp.twovalidate(userid);
 	}
 
@@ -1295,6 +1323,7 @@ public class TestUtil {
 	 * @return			返回创建的部门id
 	 */
 	public int createDepartment(String name, int parentid, int order, int id) {
+		instanceCorpProcess();
 		return corp.createDepartment(name, parentid, order, id);
 	}
 
@@ -1307,6 +1336,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public boolean updateDepartment(int id, String name, int parentid, int order) {
+		instanceCorpProcess();
 		return corp.updateDepartment(id, name, parentid, order);
 	}
 
@@ -1325,6 +1355,7 @@ public class TestUtil {
 	 * @return		List&lt;Department&gt;
 	 */
 	public List<Department> getDepartList(int id) {
+		instanceCorpProcess();
 		return corp.getDepartList(id);
 	}
 
@@ -1343,7 +1374,8 @@ public class TestUtil {
 	 * @return					成功true，失败false
 	 */
 	public boolean creteCorpUser(String userid, String name, List<Integer> department, String position, String mobile,
-			String gender, String email, String weixinid, String avatar_mediaid, List<NameValue> attrs) {
+								 String gender, String email, String weixinid, String avatar_mediaid, List<NameValue> attrs) {
+		instanceCorpProcess();
 		return corp.creteUser(userid, name, department, position, mobile, gender, email, weixinid, avatar_mediaid,
 				attrs);
 	}
@@ -1363,7 +1395,8 @@ public class TestUtil {
 	 * @return					成功true，失败false
 	 */
 	public boolean updateCorpUser(String userid, String name, List<Integer> department, String position, String mobile,
-			String gender, String email, String weixinid, String avatar_mediaid, List<NameValue> attrs) {
+								  String gender, String email, String weixinid, String avatar_mediaid, List<NameValue> attrs) {
+		instanceCorpProcess();
 		return corp.updateUser(userid, name, department, position, mobile, gender, email, weixinid, avatar_mediaid,
 				attrs);
 	}
@@ -1374,6 +1407,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public boolean deleteCorpUser(String userid) {
+		instanceCorpProcess();
 		return corp.deleteUser(userid);
 	}
 
@@ -1383,6 +1417,7 @@ public class TestUtil {
 	 * @return				成功true，失败false
 	 */
 	public boolean batchDeleteCorpUser(List<String> useridlist) {
+		instanceCorpProcess();
 		return corp.batchDeleteUser(useridlist);
 	}
 
@@ -1392,6 +1427,7 @@ public class TestUtil {
 	 * @return			com.wechat.corp.pojo.res.manager.GetUser对象
 	 */
 	public GetUser getCorpUser(String userid) {
+		instanceCorpProcess();
 		return corp.getUser(userid);
 	}
 
@@ -1403,6 +1439,7 @@ public class TestUtil {
 	 * @return				List&lt;DepartmentUser&gt;对象
 	 */
 	public List<DepartmentUser> getDepartmentUserSimeple(String departmentId, int fetchChild, int status) {
+		instanceCorpProcess();
 		return corp.getDepartmentUserSimeple(departmentId, fetchChild, status);
 	}
 
@@ -1414,6 +1451,7 @@ public class TestUtil {
 	 * @return				List&lt;com.wechat.corp.pojo.res.manager.UserInfo&gt;对象
 	 */
 	public List<UserInfo> getDepartmentUser(String departmentId, int fetchChild, int status) {
+		instanceCorpProcess();
 		return corp.getDepartmentUser(departmentId, fetchChild, status);
 	}
 
@@ -1424,6 +1462,7 @@ public class TestUtil {
 	 * @return			标签id，整型
 	 */
 	public int createTag(String tagname, int tagid) {
+		instanceCorpProcess();
 		return corp.createTag(tagname, tagid);
 	}
 
@@ -1434,6 +1473,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public boolean updateTag(int tagid, String tagname) {
+		instanceCorpProcess();
 		return corp.updateTag(tagid, tagname);
 	}
 
@@ -1443,6 +1483,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public boolean deleteTag(int tagid) {
+		instanceCorpProcess();
 		return corp.deleteTag(tagid);
 	}
 
@@ -1452,6 +1493,7 @@ public class TestUtil {
 	 * @return			List&lt;TagUserInfoSimple&gt;对象
 	 */
 	public List<TagUserInfoSimple> getTagUserSimple(int tagid) {
+		instanceCorpProcess();
 		return corp.getTagUserSimple(tagid);
 	}
 
@@ -1461,6 +1503,7 @@ public class TestUtil {
 	 * @return			GetTagUserSimple对象
 	 */
 	public GetTagUserSimple getTagUserSimple(String tagid) {
+		instanceCorpProcess();
 		return corp.getTagUserSimple(tagid);
 	}
 
@@ -1472,6 +1515,7 @@ public class TestUtil {
 	 * @return				成功true，失败抛出异常
 	 */
 	public boolean addTagUser(int tagid, List<String> userlist, List<Integer> partylist) {
+		instanceCorpProcess();
 		return corp.addTagUser(tagid, userlist, partylist);
 	}
 
@@ -1483,6 +1527,7 @@ public class TestUtil {
 	 * @return				成功true，失败抛出异常
 	 */
 	public boolean deleteTagUser(int tagid, List<String> userlist, List<Integer> partylist) {
+		instanceCorpProcess();
 		return corp.deleteTagUser(tagid, userlist, partylist);
 	}
 
@@ -1491,6 +1536,7 @@ public class TestUtil {
 	 * @return	List&lt;Tag	&gt;对象
 	 */
 	public List<Tag> getTags() {
+		instanceCorpProcess();
 		return corp.getTags();
 	}
 
@@ -1504,6 +1550,7 @@ public class TestUtil {
 	 * @return					异步任务id【jobid】
 	 */
 	public String batchCorpSyncUser(String media_id, String url, String token, String encodingaeskey) {
+		instanceCorpProcess();
 		return corp.batchSyncUser(media_id, url, token, encodingaeskey);
 	}
 
@@ -1517,6 +1564,7 @@ public class TestUtil {
 	 * @return					异步任务id【jobid】
 	 */
 	public String batchCorpReplaceUser(String media_id, String url, String token, String encodingaeskey) {
+		instanceCorpProcess();
 		return corp.batchReplaceUser(media_id, url, token, encodingaeskey);
 	}
 
@@ -1530,6 +1578,7 @@ public class TestUtil {
 	 * @return					异步任务id【jobid】
 	 */
 	public String batchCorpReplaceParty(String media_id, String url, String token, String encodingaeskey) {
+		instanceCorpProcess();
 		return corp.batchReplaceParty(media_id, url, token, encodingaeskey);
 	}
 
@@ -1539,6 +1588,7 @@ public class TestUtil {
 	 * @return			GetBatchResult对象
 	 */
 	public GetBatchResult getCorpBatchResult(String jobid) {
+		instanceCorpProcess();
 		return corp.getBatchResult(jobid);
 	}
 
@@ -1549,6 +1599,7 @@ public class TestUtil {
 	 * @return			媒体文件的media_id
 	 */
 	public String uploadCorpTempMedia(String path, String type) {
+		instanceCorpProcess();
 		return corp.uploadTempMedia(path, type);
 	}
 
@@ -1559,6 +1610,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public String getCorpTempMedia(String mediaId, String filePath) {
+		instanceCorpProcess();
 		return corp.getTempMedia(mediaId, filePath);
 	}
 
@@ -1568,6 +1620,7 @@ public class TestUtil {
 	 * @return			素材资源标识ID。最大长度为256字节
 	 */
 	public String uploadCorpMPNews(List<com.wechat.corp.pojo.msg.send.Article> articles) {
+		instanceCorpProcess();
 		return corp.uploadMPNews(articles);
 	}
 
@@ -1578,6 +1631,7 @@ public class TestUtil {
 	 * @return			素材资源标识ID。最大长度为256字节
 	 */
 	public String uploadCorpMaterial(String path, String type) {
+		instanceCorpProcess();
 		return corp.uploadMaterial(path, type);
 	}
 
@@ -1587,6 +1641,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public boolean getCorpMaterial(String mediaId) {
+		instanceCorpProcess();
 		return corp.getMaterial(mediaId);
 	}
 
@@ -1596,6 +1651,7 @@ public class TestUtil {
 	 * @return			com.wechat.corp.pojo.msg.send.Article对象
 	 */
 	public List<com.wechat.corp.pojo.msg.send.Article> getCorpMPNews(String mediaId) {
+		instanceCorpProcess();
 		return corp.getMPNews(mediaId);
 	}
 
@@ -1605,6 +1661,7 @@ public class TestUtil {
 	 * @return			成功true，失败false
 	 */
 	public boolean deleteCorpMaterial(String mediaId) {
+		instanceCorpProcess();
 		return corp.deleteMaterial(mediaId);
 	}
 
@@ -1615,6 +1672,7 @@ public class TestUtil {
 	 * @return				成功true，失败false
 	 */
 	public boolean updateCorpMPNews(String mediaId, List<com.wechat.corp.pojo.msg.send.Article> articles) {
+		instanceCorpProcess();
 		return corp.updateMPNews(mediaId, articles);
 	}
 
@@ -1623,6 +1681,7 @@ public class TestUtil {
 	 * @return	一个map对象，其中total：应用素材总数目，image：图片素材总数目，voice：音频素材总数目，video：视频素材总数目，file：文件素材总数目，mpnews：图文素材总数目
 	 */
 	public Map<String, Integer> getCorpMaterialCount() {
+		instanceCorpProcess();
 		return corp.getMaterialCount();
 	}
 
@@ -1634,6 +1693,7 @@ public class TestUtil {
 	 * @return			List&lt;MaterialItem&gt;对象，MaterialItem中有media_id，filename，update_time
 	 */
 	public List<MaterialItem> getCorpMaterialList(String type, int offset, int count) {
+		instanceCorpProcess();
 		return corp.getMaterialList(type, offset, count);
 	}
 
@@ -1644,6 +1704,7 @@ public class TestUtil {
 	 * @return			List&lt;MPNewsBack&gt;对象
 	 */
 	public List<MPNewsBack> getCorpMPNewsList(int offset, int count) {
+		instanceCorpProcess();
 		return corp.getMPNewsList(offset, count);
 	}
 
@@ -1653,6 +1714,7 @@ public class TestUtil {
 	 * @return		素材文件url地址
 	 */
 	public String uploadCorpMPNewsImage(String path) {
+		instanceCorpProcess();
 		return corp.uploadMPNewsImage(path);
 	}
 
@@ -1666,6 +1728,7 @@ public class TestUtil {
 	 * @throws Exception	失败抛出异常
 	 */
 	public WebAccessToken getWebAccessToken(HttpServletRequest request) throws Exception {
+		instanceWebProcess();
 		return webProcess.getWebAccessToken(request);
 	}
 
@@ -1676,7 +1739,8 @@ public class TestUtil {
 	 * @throws Exception	失败抛出异常
 	 */
 	public WebUserInfo getWebUserInfoByOpenId(String openId) throws Exception {
-		return webProcess.getWebUserInfo(accessToken.getAccess_token(), openId);
+		instanceWebProcess();
+		return webProcess.getWebUserInfo(getToken(), openId);
 	}
 
 	/**
@@ -1685,7 +1749,8 @@ public class TestUtil {
 	 * @return	关注了返回true没有关注返回false
 	 */
 	public boolean userSubscribe(String openId){
-		return webProcess.userSubscribe(accessToken.getAccess_token(), openId);
+		instanceWebProcess();
+		return webProcess.userSubscribe(getToken(), openId);
 	}
 
 	/**
@@ -1694,15 +1759,17 @@ public class TestUtil {
 	 * @return userInfoJson	用户基本信息
 	 */
 	public JSONObject getUserInfoJson(String openId){
-		return webProcess.getUserInfoJson(accessToken.getAccess_token(), openId);
+		instanceWebProcess();
+		return webProcess.getUserInfoJson(getToken(), openId);
 	}
-	
+
 	/**
 	 * 获取web授权的用户信息
 	 * @param code	获取的微信code
 	 * @return		WebUserInfo对象
 	 */
 	public WebUserInfo getWebUserInfo(String code) {
+		instanceWebProcess();
 		return webProcess.getWebUserInfo(code);
 	}
 
@@ -1716,7 +1783,8 @@ public class TestUtil {
 	 * @throws Exception	失败抛出异常
 	 */
 	public void redirect2JSSdk(HttpServletRequest request, HttpServletResponse response, String redirectUrl,
-			String targetUrl, String ticket) throws Exception {
+							   String targetUrl, String ticket) throws Exception {
+		instanceWebProcess();
 		webProcess.redirect2JSSdk(request, response, redirectUrl, targetUrl, ticket);
 	}
 
@@ -1728,6 +1796,7 @@ public class TestUtil {
 	 * @return				OAUTH2的url字符串
 	 */
 	public String getOauth2Url(String redirectUri, String scope, String state) {
+		instanceWebProcess();
 		return webProcess.getOauth2Url(initData.getId(), redirectUri, scope, state);
 	}
 
@@ -1738,25 +1807,28 @@ public class TestUtil {
 	 * @return				CorpWebUserInfo对象
 	 */
 	public CorpWebUserTicket getCorpWebUserInfo(String accessToken, String code) {
+		instanceWebProcess();
 		return webProcess.getCorpWebUserInfo(accessToken, code);
 	}
-	
+
 	/**
 	 * 获取使用微信JSSDK的初始化差数
-	 * @param url	通过请求地址加上code和state的url	
+	 * @param url	通过请求地址加上code和state的url
 	 * @return	map对象
 	 */
 	public Map<String, String> getJSSDKConfig(String url) {
+		instanceWebProcess();
 		return webProcess.getJSSDKConfig(url);
 	}
-	
+
 	/**
 	 * 获取使用微信JSSDK的初始化差数
-	 * @param url		通过请求地址加上code和state的url	
+	 * @param url		通过请求地址加上code和state的url
 	 * @param code		用户code
 	 * @return			Signature对象
 	 */
 	public Signature getJSSDKConfig(String url, String code) {
+		instanceWebProcess();
 		return webProcess.getJSSDKConfig(url, code);
 	}
 
@@ -1766,27 +1838,30 @@ public class TestUtil {
 	 * @return CorpWebUserTicket对象
 	 */
 	public CorpWebUserTicket getCorpSnsapiBase(String code) {
+		instanceWebProcess();
 		return webProcess.getCorpSnsapiBase(code);
 	}
-	
+
 	/**
 	 * 获取企业号web页面snsapi_info信息
 	 * @param code
 	 * @return CorpWebUserInfo对象
 	 */
 	public CorpWebUserInfo getCorpSnsapiInfo(String code) {
+		instanceWebProcess();
 		return webProcess.getCorpSnsapiInfo(code);
 	}
-	
+
 	/**
 	 * 获取使用微信JSSDK的初始化参数
 	 * @param url		通过请求地址加上code和state的url
 	 * @return			Signature对象
 	 */
 	public Signature getJSSDKConfigOutOpenId(String url) {
+		instanceWebProcess();
 		return webProcess.getJSSDKConfigOutOpenId(url);
 	}
-	
+
 	/**
 	 * 获取临时二维码
 	 * @param expireSeconds	该二维码有效时间，以秒为单位。 最大不超过604800（即7天）
@@ -1794,9 +1869,10 @@ public class TestUtil {
 	 * @return	ApiResult 二维码信息
 	 */
 	public QRCodeResult getTempQrcode(int expireSeconds, int sceneId) {
-        return webProcess.getTempQrcode(expireSeconds, sceneId);
+		instanceWebProcess();
+		return webProcess.getTempQrcode(expireSeconds, sceneId);
 	}
-	
+
 	/**
 	 * 获取临时二维码
 	 * @param expireSeconds	该二维码有效时间，以秒为单位。 最大不超过604800（即7天）
@@ -1804,27 +1880,30 @@ public class TestUtil {
 	 * @return
 	 */
 	public QRCodeResult getTempQrcode(int expireSeconds, String sceneStr) {
-        return webProcess.getTempQrcode(expireSeconds, sceneStr);
+		instanceWebProcess();
+		return webProcess.getTempQrcode(expireSeconds, sceneStr);
 	}
-	
+
 	/**
 	 * 获取永久二维码
 	 * @param sceneId	场景值ID，永久二维码时最大值为100000（目前参数只支持1--100000）
 	 * @return	ApiResult 二维码信息
 	 */
 	public QRCodeResult getEternalQrcode(int sceneId) {
-        return webProcess.getEternalQrcode(sceneId);
+		instanceWebProcess();
+		return webProcess.getEternalQrcode(sceneId);
 	}
-	
+
 	/**
 	 * 获取永久二维码
 	 * @param sceneStr	场景值ID（字符串形式的ID），字符串类型，长度限制为1到64，仅永久二维码支持此字段
 	 * @return	ApiResult 二维码信息
 	 */
 	public QRCodeResult getEternalQrcode(String sceneStr) {
-        return webProcess.getEternalQrcode(sceneStr);
+		instanceWebProcess();
+		return webProcess.getEternalQrcode(sceneStr);
 	}
-	
+
 	/**
 	 * 生成并下载带临时的参数二维码
 	 * @param expireSeconds	该二维码有效时间，以秒为单位。 最大不超过604800（即7天）
@@ -1833,9 +1912,10 @@ public class TestUtil {
 	 * @return 文件地址，filePath为“c:\cishi”将返回“c:\cishi.[jpg/png/icon/gif/bmp/...]”系统根据文件本来的根式自动补上
 	 */
 	public String getAndDownTempQrcode(int expireSeconds, int sceneId, String filePath) {
+		instanceWebProcess();
 		return webProcess.getAndDownTempQrcode(expireSeconds, sceneId, filePath);
 	}
-	
+
 	/**
 	 * 生成并下载带临时的参数二维码
 	 * @param expireSeconds	该二维码有效时间，以秒为单位。 最大不超过604800（即7天）
@@ -1844,9 +1924,10 @@ public class TestUtil {
 	 * @return 文件地址，filePath为“c:\cishi”将返回“c:\cishi.[jpg/png/icon/gif/bmp/...]”系统根据文件本来的根式自动补上
 	 */
 	public String getAndDownTempQrcode(int expireSeconds, String sceneStr, String filePath) {
+		instanceWebProcess();
 		return webProcess.getAndDownTempQrcode(expireSeconds, sceneStr, filePath);
 	}
-	
+
 	/**
 	 * 生成并下载带永久的参数二维码
 	 * @param sceneId	场景值ID，永久二维码时最大值为100000（目前参数只支持1--100000）
@@ -1854,9 +1935,10 @@ public class TestUtil {
 	 * @return 文件地址，filePath为“c:\cishi”将返回“c:\cishi.[jpg/png/icon/gif/bmp/...]”系统根据文件本来的根式自动补上
 	 */
 	public String getAndDownEternalQrcode(int sceneId, String filePath) {
+		instanceWebProcess();
 		return webProcess.getAndDownEternalQrcode(sceneId, filePath);
 	}
-	
+
 	/**
 	 * 生成并下载带永久的参数二维码
 	 * @param sceneStr	场景值ID（字符串形式的ID），字符串类型，长度限制为1到64，仅永久二维码支持此字段
@@ -1864,9 +1946,10 @@ public class TestUtil {
 	 * @return 文件地址，filePath为“c:\cishi”将返回“c:\cishi.[jpg/png/icon/gif/bmp/...]”系统根据文件本来的根式自动补上
 	 */
 	public String getAndDownEternalQrcode(String sceneStr, String filePath) {
+		instanceWebProcess();
 		return webProcess.getAndDownEternalQrcode(sceneStr, filePath);
 	}
-	
+
 	/**
 	 * 通过ticket下载带参数二维码
 	 * @param ticket	获取的二维码ticket，凭借此ticket可以在有效时间内换取二维码。
@@ -1874,23 +1957,50 @@ public class TestUtil {
 	 * @return	文件地址，filePath为“c:\cishi”将返回“c:\cishi.[jpg/png/icon/gif/bmp/...]”系统会自动根据文件本来的根式自动补上
 	 */
 	public String downQrcodeByTicket(String ticket, String filePath) {
+		instanceWebProcess();
 		return webProcess.downQrcodeByTicket(ticket, filePath);
 	}
-	
+
 	/**
 	 * 获取微信短链接
 	 * @param longUrl 需要生成短链接的长链接
 	 * @return	ShortUrl 短链接信息
 	 */
 	public ShortUrl getShortUrl(String longUrl) {
+		instanceWebProcess();
 		return webProcess.getShortUrl(longUrl);
 	}
 
 	private String getToken() {
-		return this.accessToken.getAccess_token();
+		return getAccessToken().getAccess_token();
 	}
-	
+
 	private String getTicket() {
-		return this.jsApiTicket.getTicket();
+		return getJSApiTicket().getTicket();
+	}
+
+	private void instanceMenuUtil() {
+		if (menuUtil == null)
+			menuUtil = new MenuUtil(getAccessToken());
+	}
+
+	private void instanceWebProcess(){
+		if (webProcess == null)
+			webProcess = new WebProcess(initData, getAccessToken(), getJSApiTicket());
+	}
+
+	private void instanceMsgProcess(){
+		if (process == null)
+			process = new MsgProcess(wechatData);
+	}
+
+	private void instanceSendMessage(){
+		if (send == null)
+			send = new SendMessage(getToken());
+	}
+
+	private void instanceCorpProcess(){
+		if (corp == null)
+			corp = new CorpProcess(wechatData, getAccessToken(), getJSApiTicket());
 	}
 }
